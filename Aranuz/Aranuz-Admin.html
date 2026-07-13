@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Aranuz · Painel de Administração</title>
+<!-- V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): novo card "Reports de Usuários (Erro/Melhoria)" —
+     lê a coleção reportsUsuarios (texto livre enviado pelo botão do cabeçalho do App principal), com
+     opção de excluir cada report depois de tratado. -->
 <!-- V3.33 — 13/07/2026 (Rodada 1, pedido do cliente): "Reenviar redefinição de senha" agora força
      auth.languageCode='pt-BR' antes de enviar — o e-mail sai em português. O ENDEREÇO do remetente
      (noreply@aranuz-6c80c.firebaseapp.com) continua igual — só é ajustável no Console do Firebase. -->
@@ -346,6 +349,16 @@
       <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Erros de JavaScript reais capturados automaticamente no app principal — cada erro só é gravado uma vez por sessão do usuário, pra não inundar esta lista.</div>
       <div id="log-erros-app-lista"><div class="lista-vazia">Clique em "Carregar" pra ver os erros mais recentes.</div></div>
       <button class="btn-neutro btn-sm" onclick="carregarLogErrosApp()" style="margin-top:12px;">↻ Carregar</button>
+    </div>
+
+    <!-- V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): reports manuais enviados pelo botão "REPORTAR
+         ERRO / MELHORIA" no cabeçalho do App principal (coleção reportsUsuarios, nível raiz) — diferente
+         do card acima, que é automático; este é texto livre escrito pela própria pessoa. -->
+    <div class="card">
+      <div class="card-title">📝 Reports de Usuários (Erro/Melhoria)</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Enviados pelo botão "Reportar Erro/Melhoria" no cabeçalho do app, de qualquer empresa/usuário.</div>
+      <div id="reports-usuarios-lista"><div class="lista-vazia">Clique em "Carregar" pra ver os reports mais recentes.</div></div>
+      <button class="btn-neutro btn-sm" onclick="carregarReportsUsuarios_()" style="margin-top:12px;">↻ Carregar</button>
     </div>
   </div>
 
@@ -1525,6 +1538,41 @@
       if (pareceRegraFaltando) ajuda = ' Parece faltar a Regra de Segurança para a coleção "logsErrosApp" — adicione: <code>match /logsErrosApp/{docId} { allow create: if request.auth != null; allow read: if request.auth != null && request.auth.token.email == "SEU_EMAIL_DE_ADMIN"; }</code>.';
       el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red); text-align:left;">Erro ao carregar: ' + esc(mensagem) + '.' + ajuda + '</div>';
     }
+  }
+
+  // ============================================================
+  // V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): Reports de Usuários (Erro/Melhoria) — texto livre
+  // enviado pelo botão do cabeçalho do App principal. Mesmo padrão de carregarLogErrosApp() acima.
+  // ============================================================
+  async function carregarReportsUsuarios_() {
+    const el = document.getElementById('reports-usuarios-lista');
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    if (!pronto) return;
+    try {
+      const snap = await db.collection('reportsUsuarios').orderBy('criadoEm', 'desc').limit(50).get();
+      if (snap.empty) { el.innerHTML = '<div class="lista-vazia">Nenhum report enviado até agora.</div>'; return; }
+      const linhas = [];
+      snap.forEach(doc => {
+        const r = doc.data();
+        linhas.push('<div class="log-geral-item"><strong>' + esc(r.empresaNome || r.empresaId || '(empresa desconhecida)') + '</strong> — ' + esc(r.emailUsuario || '(e-mail desconhecido)') + ' — ' + fmtData(r.criadoEm)
+          + '<br><span style="white-space:pre-wrap;">' + esc(r.texto || '') + '</span>'
+          + '<br><span style="color:var(--text-muted); font-size:10.5px;">Versão do app: ' + esc(r.versaoApp || '?') + '</span>'
+          + ' <button class="btn-sm btn-vermelho" style="margin-top:6px;" onclick="excluirReportUsuario_(\'' + doc.id + '\')">Excluir</button>'
+          + '</div>');
+      });
+      el.innerHTML = linhas.join('');
+    } catch (e) {
+      const mensagem = String(e && e.message || e);
+      const pareceRegraFaltando = /permission|insufficient/i.test(mensagem);
+      let ajuda = '';
+      if (pareceRegraFaltando) ajuda = ' Parece faltar a Regra de Segurança para a coleção "reportsUsuarios" (ver Regras_Firebase_V3_34.txt).';
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red); text-align:left;">Erro ao carregar: ' + esc(mensagem) + '.' + ajuda + '</div>';
+    }
+  }
+  async function excluirReportUsuario_(docId) {
+    if (!confirm('Excluir este report? Não pode ser desfeito.')) return;
+    try { await db.collection('reportsUsuarios').doc(docId).delete(); carregarReportsUsuarios_(); }
+    catch (e) { alert('Erro ao excluir: ' + (e && e.message || e)); }
   }
 
   iniciar();

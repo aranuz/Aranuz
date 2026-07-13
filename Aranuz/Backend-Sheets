@@ -1,6 +1,8 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_33.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_34.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.34 — 13/07/2026 (Rodada 2): só pareamento de versão — a sincronização retroativa e o botão
+ * "Reportar Erro" desta rodada usam a MESMA rota de POST/coleções já existentes, nenhuma mudança aqui.
  * V3.33 — 13/07/2026 (Rodada 1): só pareamento de versão com o App — nenhuma mudança funcional neste
  * arquivo nesta rodada (os itens da Rodada 1 foram todos de front-end: Home, App e Admin).
  * V3.28 — 13/07/2026 (Rodada 1): referência de pareamento acima corrigida (estava citando um App bem
@@ -275,7 +277,8 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.33"; // V3.33 — 13/07/2026 (Rodada 1): só pareamento — mudanças desta rodada
+var BACKEND_VERSION = "3.34"; // V3.34 — 13/07/2026 (Rodada 2): só pareamento — nenhuma rota nova.
+// V3.33 — 13/07/2026 (Rodada 1): só pareamento — mudanças desta rodada
 // (idioma do e-mail, tema claro, onboarding, ícone de ajuda, limpeza de marca) foram todas de front-end.
 // V3.32 — 13/07/2026 (Rodada 3B): só pareamento — Auditoria/Logs desta
 // rodada vive inteiramente no Admin/Firestore, nenhuma mudança na planilha/GS.

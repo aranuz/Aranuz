@@ -3,10 +3,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================
-    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.32 (13/07/2026, Rodada 3B)
-    // Pareada com Aranuz_App_V3_32.html / Aranuz_Sheets-Usuario_V3_32.gs / Aranuz_Admin_V3_32.html.
-    // Mudanças: delete liberado em logsResetsAdmin/logsExclusoesAdmin/logsTentativasAdmin/
-    // logsErrosApp (Retenção de Logs) + nova coleção notasInternasEmpresa (Notas Internas).
+    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.34 (13/07/2026, Rodada 2)
+    // Pareada com Aranuz_App_V3_34.html / Aranuz_Sheets-Usuario_V3_34.gs / Aranuz_Admin_V3_34.html.
+    // Mudanças desta versão: nova coleção reportsUsuarios (botão "Reportar Erro/Melhoria" do
+    // cabeçalho do App) — qualquer autenticado cria, só o admin lê/apaga.
+    // V3.32: delete liberado em logsResetsAdmin/logsExclusoesAdmin/logsTentativasAdmin/
+    // logsErrosApp (Retenção de Logs) + coleção notasInternasEmpresa (Notas Internas).
     // Reforça as ações administrativas do Painel de Administração (Resetar
     // Banco de Dados / Excluir Usuário) com permissão checada no SERVIDOR,
     // não só a confirmação de texto na tela.
@@ -150,6 +152,16 @@ service cloud.firestore {
     match /logsErrosApp/{docId} {
       allow create: if request.auth != null;
       allow read, delete: if isAdmin(); // V3.32 — delete adicionado pra Retenção de Logs do Admin
+    }
+
+    // ------------------------------------------------------------
+    // V3.34 — 13/07/2026 (Rodada 2): Reportar Erro/Melhoria — texto livre que o próprio usuário escreve
+    // (botão no cabeçalho do App), pra virar um banco de comentários/sugestões só o admin lê. Mesmo
+    // padrão de logsErrosApp acima: qualquer autenticado cria (o report dele mesmo); só o admin lê/apaga.
+    // ------------------------------------------------------------
+    match /reportsUsuarios/{docId} {
+      allow create: if request.auth != null;
+      allow read, delete: if isAdmin();
     }
 
     // ------------------------------------------------------------

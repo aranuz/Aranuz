@@ -767,6 +767,13 @@
                     <button class="icon-btn" title="Configurações" aria-label="Configurações" onclick="abrirCentralConfig_()">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
+                    <!-- V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): botão de reporte manual — abre
+                         uma janela de texto livre que vai direto pra uma coleção do Firestore só o admin lê
+                         (reportsUsuarios), com nome do usuário e data anexados automaticamente. -->
+                    <button class="btn-secondary" title="Reportar um erro ou sugerir uma melhoria" aria-label="Reportar Erro / Melhoria" onclick="abrirModalReportarErro_()" style="font-size:11px; padding:6px 10px; display:flex; align-items:center; gap:5px; white-space:nowrap;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.007M4.929 4.929a10 10 0 1014.142 14.142A10 10 0 004.93 4.93z"/></svg>
+                        REPORTAR ERRO / MELHORIA
+                    </button>
                     <button class="icon-btn" title="Manual de Uso do App" aria-label="Manual de Uso do App" onclick="switchTab('manual-uso')">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg>
                     </button>
@@ -2203,6 +2210,10 @@
             const el = document.getElementById('onbSheetsUrl');
             const url = el ? el.value.trim() : '';
             if(!url) { showToast('Cole a URL da implantação do Apps Script antes de conectar.'); return; }
+            // V3.34 — 13/07/2026 (Rodada 2): mesmo sinalizador de _conferirConexaoTardiaSheets_() usado em
+            // saveAppConfig() — cobre o caso raro de já existir dado cadastrado antes de concluir a Boas
+            // Vindas (ex.: app usado sem sheet e o guia reaberto/forçado depois).
+            if(!getSheetsUrlBase_()) localStorage.setItem('mang_sheets_conexao_tardia_pendente', '1');
             setSheetsUrl(url);
             localStorage.setItem('mang_onboarding_visto', '1'); // não repete o guia sozinho depois do reload
             alert('Planilha conectada! A página vai recarregar agora pra usar a nova conexão.');
@@ -3575,7 +3586,14 @@
         // voltar/avançar alinhados à direita, removido o link direto pra Configurações Avançadas na etapa
         // final; (4) limpeza de resíduos de marca antiga (Mang Film/Marangatu Filmes) em textos/comentários
         // fora do ID técnico de empresa (esse ainda pendente — ver FB_EMPRESA_ID).
-        const FRONTEND_VERSION = '3.33';
+        // V3.34 — 13/07/2026 (Rodada 2, pedidos do cliente): (1) Sincronização retroativa — ao conectar
+        // uma planilha do Sheets pela primeira vez depois de já ter usado o app, todos os dados já
+        // cadastrados (Firestore) agora são copiados automaticamente pra ela, sem esperar uma edição
+        // qualquer acontecer (ver _conferirConexaoTardiaSheets_()); (2) novo botão "REPORTAR ERRO /
+        // MELHORIA" no cabeçalho — texto livre do usuário vai pra coleção reportsUsuarios, só o admin lê
+        // (ver Regras_Firebase_V3_34.txt); (3) FB_EMPRESA_ID: fallback trocado de 'marangatu' pra 'aranuz'
+        // (confirmado como código morto — não precisa de migração de dados).
+        const FRONTEND_VERSION = '3.34';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -5142,6 +5160,7 @@
             // a confirmação (ou um timeout de 8s) antes de tentar a primeira sincronização de verdade.
             await aguardarFirebasePronto_(8000);
             await syncWithCloud(); // ao terminar, syncWithCloud->pullAndMerge já re-renderiza sozinho com os dados atualizados
+            _conferirConexaoTardiaSheets_(); // V3.34 — Rodada 2: se acabou de conectar a planilha, empurra tudo pra ela agora
             // V3.08: guia inicial (onboarding) reconstruído — ver verificarExibirOnboarding_(). Roda só
             // depois do primeiro syncWithCloud(), pra decidir com os dados JÁ atualizados (evita abrir o
             // guia à toa achando que a base está vazia, quando na verdade os dados ainda não chegaram).
@@ -6052,6 +6071,21 @@
         let _sheetsUltimoEnviado = {};
         let _sheetsForcarCompleto = true;
         let _sheetsUltimoEnvioCompletoTs = 0;
+        // V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): "conectei a planilha depois de já ter usado o
+        // app" — sem isso, os dados já cadastrados só chegavam na planilha na próxima vez que algo fosse
+        // editado (o primeiro saveDb() depois do reload já manda tudo, por causa do _sheetsForcarCompleto
+        // = true padrão — mas só roda se ALGUÉM chamar saveDb(); conectar sozinho não chamava). Agora,
+        // logo após conectar uma URL nova (sem nenhuma antes) e a página recarregar, isto roda uma vez,
+        // força o próximo envio a ser completo e chama saveDb() — copiando TODOS os dados já existentes
+        // (Firestore, que é a fonte de verdade) pra planilha recém-conectada, sem esperar nenhuma edição.
+        function _conferirConexaoTardiaSheets_() {
+            if(localStorage.getItem('mang_sheets_conexao_tardia_pendente') !== '1') return;
+            localStorage.removeItem('mang_sheets_conexao_tardia_pendente');
+            if(!getSheetsUrl()) return; // segurança: sem URL de verdade, não faz nada
+            _sheetsForcarCompleto = true;
+            showStickyToast('Planilha conectada — copiando os dados já cadastrados no Aranuz para ela agora...');
+            saveDb();
+        }
         async function saveDb() {
             _dbDirty = true;
             // V33: Invalidate select cache when data changes
@@ -9687,11 +9721,14 @@
         // FB_EMPRESA_ID: a partir da V240, vem de uma conta real de e-mail/senha aprovada pelo
         // administrador (ver validarLoginAcesso()/verificarAcessoAoAbrir(), no topo do arquivo), lida do
         // documento usuarios/{uid} e guardada em localStorage ('mhub_empresa_id') só como cache local —
-        // a fonte de verdade é sempre o Firestore. O fallback 'marangatu' abaixo só existe porque a
+        // a fonte de verdade é sempre o Firestore. O fallback 'aranuz' abaixo só existe porque a
         // variável precisa de algum valor inicial antes do login acontecer; na prática nunca chega a ser
         // usado pra ler/gravar dado nenhum, porque sem uma sessão válida o app fica preso na tela de
         // login (init() nunca roda) — ver verificarAcessoAoAbrir().
-        let FB_EMPRESA_ID = localStorage.getItem('mhub_empresa_id') || 'marangatu';
+        // V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): valor trocado de 'marangatu' pra 'aranuz' —
+        // confirmado como código morto (nunca lê/grava dado de verdade), então a troca não exige
+        // nenhuma migração de dados no Firestore.
+        let FB_EMPRESA_ID = localStorage.getItem('mhub_empresa_id') || 'aranuz';
         // V2.75 — 10/07/2026 23:00: Bloco 5 — seções de menu escondidas ESPECIFICAMENTE pra este usuário
         // (por cima do que a empresa já esconde pra todo mundo — nunca reaparece uma seção que a empresa
         // escondeu globalmente), definidas pelo administrador em MHub_Admin_Usuarios.html e guardadas em
@@ -9788,6 +9825,49 @@
                     em: new Date().toISOString()
                 });
             } catch (e) { console.warn('[Aranuz][Log de Erros] falha ao registrar (não afeta o app):', e); }
+        }
+        // V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): "Reportar Erro/Melhoria" — texto livre que o
+        // próprio usuário escreve (diferente de _registrarErroApp_ acima, que é automático) — vai pra uma
+        // coleção própria (reportsUsuarios, nível raiz, mesmo padrão de logsErrosApp) que só o admin lê.
+        // OBSERVAÇÃO: o cadastro (Home) hoje não coleta o nome da PESSOA, só o e-mail e o nome da empresa
+        // — por isso o relatório identifica por e-mail + empresa. Se quiser um campo de nome próprio,
+        // avise que eu adiciono no cadastro numa próxima rodada.
+        function abrirModalReportarErro_() {
+            const html = '<div class="modal-header-title" style="margin-bottom:6px;">🐞 Reportar Erro / Melhoria</div>'
+                + '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Descreva o que aconteceu (ou a melhoria que você gostaria de ver). Isso vai direto pra uma lista que só o administrador do Aranuz acessa — não é um chat, então não espere resposta por aqui.</div>'
+                + '<textarea id="reportErroTexto" class="input-element" rows="6" style="width:100%; resize:vertical;" placeholder="Descreva com o máximo de detalhes possível: o que você esperava que acontecesse, o que aconteceu de fato, e em qual tela."></textarea>'
+                + '<div class="modal-buttons-row" style="margin-top:16px;">'
+                + '<button class="btn-secondary" onclick="closeGenericModal(\'modalReportarErroOverlay\')">Cancelar</button>'
+                + '<button class="btn-primary" id="btnEnviarReportErro" onclick="enviarReportUsuario_()">Enviar</button>'
+                + '</div>';
+            openGenericModal('modalReportarErroOverlay', html);
+        }
+        async function enviarReportUsuario_() {
+            const campo = document.getElementById('reportErroTexto');
+            const texto = campo ? campo.value.trim() : '';
+            if (!texto) { showToast('Escreva alguma coisa antes de enviar.'); return; }
+            const btn = document.getElementById('btnEnviarReportErro');
+            if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+            try {
+                if (!fbDb) throw new Error('Firestore indisponível no momento');
+                const user = firebase.auth().currentUser;
+                await fbDb.collection('reportsUsuarios').add({
+                    texto: texto.slice(0, 4000),
+                    emailUsuario: (user && user.email) || null,
+                    uid: (user && user.uid) || null,
+                    empresaId: FB_EMPRESA_ID || null,
+                    empresaNome: localStorage.getItem('mhub_empresa_nome') || null,
+                    versaoApp: FRONTEND_VERSION,
+                    criadoEm: new Date().toISOString()
+                });
+                closeGenericModal('modalReportarErroOverlay');
+                showToast('Obrigado! Seu report foi enviado.');
+            } catch (e) {
+                console.error('[Aranuz][Reportar Erro] falha ao enviar:', e);
+                showToast('Não foi possível enviar agora. Tente de novo em instantes.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Enviar'; }
+            }
         }
         window.addEventListener('error', function(ev) {
             _registrarErroApp_(ev.message, (ev.error && ev.error.stack) || (ev.filename + ':' + ev.lineno), 'window.onerror');
@@ -16646,7 +16726,15 @@
             atualizarLinksEstaticosNaTela();
 
             const mudouUrl = urlNova !== urlAntiga; // já sabemos aqui que urlNova não é vazia (early return acima cobriu isso)
-            if(mudouUrl) setSheetsUrl(urlNova);
+            if(mudouUrl) {
+                setSheetsUrl(urlNova);
+                // V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): se a planilha nunca tinha sido
+                // configurada antes (urlAntiga vazia) e agora está sendo conectada pela primeira vez,
+                // marca um sinalizador que sobrevive ao reload — ver _conferirConexaoTardiaSheets_(),
+                // chamada no fim de init() — pra copiar TODOS os dados já cadastrados no app (Firestore)
+                // pra essa planilha recém-conectada, em vez de esperar a pessoa editar algo por acaso.
+                if(!urlAntiga) localStorage.setItem('mang_sheets_conexao_tardia_pendente', '1');
+            }
 
             closeAppConfigModal();
             showToast('Configurações do app salvas!');
