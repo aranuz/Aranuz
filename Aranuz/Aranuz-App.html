@@ -3463,7 +3463,13 @@
         // Telefone do Atendente, Origem do Canal) — antes cobria só uma fração dos campos reais de um
         // Lead. Quem já baixou o modelo antigo precisa baixar este de novo antes de reimportar (o
         // cabeçalho é conferido exatamente, coluna por coluna).
-        const FRONTEND_VERSION = '3.47';
+        // V3.48 — 13/07/2026 (Rodada 7, item 8): nova aba "Excluir Dados" em Central de Configurações >
+        // Geral — apaga leads/clientes/projetos/orçamentos/contratos/financeiro/fornecedores/funcionários
+        // individualmente (lista com checkbox) ou todos de um tipo de uma vez, sempre exigindo digitar
+        // "EXCLUIR" (confirmação reforçada) antes de confirmar. Tudo passa pela Lixeira antes de sumir de
+        // vez — nada é apagado na hora, fica recuperável. Prazo padrão da Lixeira mudou de 30 para 14
+        // dias (pedido do cliente) — só afeta quem nunca configurou um prazo próprio.
+        const FRONTEND_VERSION = '3.48';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -9028,7 +9034,8 @@
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
                 <p><strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas): crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
                 <p><strong>Alertas Automáticos do Sistema</strong> (Central de Configurações &gt; Alertas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Atalhos Rápidos para Histórico/Exportar Dados/Banco de Dados, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados), Personalização (Etapas e Categorias, Menus e Seções, Contratos) e Avançado (Checklist de Saúde do App, Sincronização, Restaurar Configurações de Fábrica) — todas com conteúdo próprio dentro da Central, sem abrir nenhuma janela separada — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Desde a V3.45, a janela em si não mostra mais status de sincronização nem versão do app — essa informação ficou só na barra de menus, no topo da tela (bolinhas de status + "v3.45", ao lado do nome da empresa logada), clicável pra abrir a própria Central de Configurações.</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Atalhos Rápidos para Histórico/Exportar Dados/Banco de Dados, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Excluir Dados, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados), Personalização (Etapas e Categorias, Menus e Seções, Contratos) e Avançado (Checklist de Saúde do App, Sincronização, Restaurar Configurações de Fábrica) — todas com conteúdo próprio dentro da Central, sem abrir nenhuma janela separada — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Desde a V3.45, a janela em si não mostra mais status de sincronização nem versão do app — essa informação ficou só na barra de menus, no topo da tela (bolinhas de status + "v3.45", ao lado do nome da empresa logada), clicável pra abrir a própria Central de Configurações.</p>
+                <p><strong>Excluir Dados</strong> (Central de Configurações &gt; Geral, desde a V3.48): apague leads, clientes, projetos, orçamentos, contratos, lançamentos financeiros, fornecedores ou funcionários — escolhendo item por item numa lista ("Escolher itens específicos") ou tudo de um tipo de uma vez ("Excluir Todos"). Qualquer exclusão feita aqui exige digitar <strong>EXCLUIR</strong> pra confirmar (evita clique acidental numa ação em massa) e passa primeiro pela Lixeira — nada some de vez na hora, fica recuperável pelo prazo configurado ali (14 dias por padrão) antes de ser apagado de verdade.</p>
                 <p><strong>Menus e Seções</strong> (Central de Configurações &gt; Personalização) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
@@ -14002,7 +14009,7 @@
         // excluido SAI da colecao original exatamente como antes (nenhuma tela de listagem/filtro
         // precisa mudar), mas uma copia completa vai pra db.lixeira antes de sair. Restaurar = tirar de
         // db.lixeira e devolver pra colecao original. Uma rotina de purga roda a cada carregamento do
-        // app e remove da lixeira o que passou do prazo configuravel (padrao 30 dias).
+        // app e remove da lixeira o que passou do prazo configuravel (padrao 14 dias — ver V3.48).
         const LIXEIRA_COLECOES_CONFIG_ = {
             leads: { label: 'Lead', arr: 'leads' },
             clients: { label: 'Cliente', arr: 'clients' },
@@ -14013,7 +14020,10 @@
             fornecedores: { label: 'Fornecedor', arr: 'fornecedores' },
             funcionarios: { label: 'Funcionário', arr: 'funcionarios' }
         };
-        function lixeiraRetencaoDias_() { const n = parseInt(getLink('lixeiraRetencaoDias')); return (n && n > 0) ? n : 30; }
+        // V3.48 — 13/07/2026 (Rodada 7, item 8): prazo padrão da lixeira mudou de 30 pra 14 dias (pedido
+        // explícito do cliente). Só afeta contas que NUNCA mexeram em "Manter por (dias)" — quem já
+        // configurou um valor próprio continua com o valor que escolheu, sem ser sobrescrito.
+        function lixeiraRetencaoDias_() { const n = parseInt(getLink('lixeiraRetencaoDias')); return (n && n > 0) ? n : 14; }
         function moverParaLixeira_(colecaoKey, registro) {
             if(!registro) return;
             if(!db.lixeira) db.lixeira = [];
@@ -14144,6 +14154,113 @@
         function abrirLixeiraModal_() {
             purgarLixeiraExpirada_();
             openGenericModal('modalLixeiraOverlay', renderLixeiraModalConteudo_(), true);
+        }
+
+        // ============ V3.48 — 13/07/2026 (Rodada 7, item 8): EXCLUIR DADOS POR MENU ============
+        // Nova aba "Excluir Dados" em Central de Configurações (ver CENTRAL_CONFIG_GRUPOS_ e
+        // _renderExcluirDadosTabContent_ logo abaixo) — permite apagar leads/clientes/projetos/orçamentos/
+        // contratos/financeiro/fornecedores/funcionários INDIVIDUALMENTE (escolhendo item por item numa
+        // lista) ou TODOS DE UMA VEZ (um tipo inteiro), sempre com confirmação REFORÇADA (digitar
+        // "EXCLUIR", mesmo mecanismo já usado em exclusões grandes — ver customConfirmReforcado()).
+        // Tudo passa por moverParaLixeira_() antes de sair da coleção — nada é apagado de vez na hora,
+        // fica recuperável na Lixeira pelo prazo configurado (14 dias por padrão). _excluirRegistrosEmMassa_
+        // centraliza a lógica comum (soft-delete + saveDb + re-render) E replica os mesmos efeitos
+        // colaterais que as telas de exclusão individual já tinham antes desta rodada (limpar
+        // orcamentoItens/propostaServicoItens ao excluir Orçamentos, contratoAnexoItens ao excluir
+        // Contratos, lançamentos financeiros automáticos ao excluir Projetos, e o contador de "Objetivos
+        // do Mês — Busca" ao excluir Leads) — pra um "excluir todos" nunca deixar dado órfão pra trás.
+        window._excluirDadosSelecionados_ = {};
+        function _renderExcluirDadosTabContent_() {
+            const dias = lixeiraRetencaoDias_();
+            const linhas = Object.keys(LIXEIRA_COLECOES_CONFIG_).map(function(chave){
+                const cfg = LIXEIRA_COLECOES_CONFIG_[chave];
+                const qtd = (db[cfg.arr] || []).length;
+                return '<div style="border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; margin-bottom:10px;">'+
+                    '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">'+
+                    '<div><strong>'+esc(cfg.label)+'s</strong> <span style="color:var(--text-secondary); font-size:12px;">('+qtd+' cadastrado(s))</span></div>'+
+                    '<div style="display:flex; gap:8px; flex-wrap:wrap;">'+
+                    '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="_toggleExcluirDadosLista_(\''+chave+'\')" '+(qtd?'':'disabled')+'>Escolher itens específicos</button>'+
+                    '<button type="button" class="btn-action danger" style="font-size:12px;" onclick="excluirTodosDaColecao_(\''+chave+'\')" '+(qtd?'':'disabled')+'>🗑️ Excluir Todos</button>'+
+                    '</div></div>'+
+                    '<div id="excluirDadosLista_'+chave+'" class="hidden" style="margin-top:12px; max-height:260px; overflow-y:auto; border-top:1px solid var(--border-color); padding-top:10px;"></div>'+
+                    '</div>';
+            }).join('');
+            return '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Excluir Dados</div>'+
+                '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px; line-height:1.5;">Apague registros individualmente (escolhendo item por item) ou todos de uma vez, por tipo de dado. Toda exclusão feita aqui passa primeiro pela Lixeira — nada some de vez na hora, fica recuperável por '+dias+' dia(s) (ajuste em "Itens Excluídos (Lixeira)"). Exige digitar "EXCLUIR" antes de confirmar, pra evitar clique acidental numa ação em massa.</div>'+
+                linhas;
+        }
+        function _toggleExcluirDadosLista_(chave) {
+            const area = document.getElementById('excluirDadosLista_'+chave);
+            if(!area) return;
+            if(!area.classList.contains('hidden')) { area.classList.add('hidden'); area.innerHTML = ''; return; }
+            area.classList.remove('hidden');
+            const cfg = LIXEIRA_COLECOES_CONFIG_[chave];
+            const itens = (db[cfg.arr]||[]).slice();
+            window._excluirDadosSelecionados_[chave] = new Set();
+            if(!itens.length) { area.innerHTML = '<div style="font-size:12px; color:var(--text-secondary);">Nenhum registro.</div>'; return; }
+            const linhasItens = itens.map(function(it){
+                return '<label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12.5px; cursor:pointer;">'+
+                    '<input type="checkbox" onchange="_marcarExcluirDadosItem_(\''+chave+'\', \''+it.id+'\', this.checked)">'+
+                    esc(_lixeiraNomeRegistro_(chave, it))+
+                    '</label>';
+            }).join('');
+            area.innerHTML = linhasItens + '<div style="margin-top:10px;"><button type="button" class="btn-action danger" style="font-size:12px;" onclick="excluirSelecionadosDaColecao_(\''+chave+'\')">🗑️ Excluir Selecionados</button></div>';
+        }
+        function _marcarExcluirDadosItem_(chave, id, marcado) {
+            if(!window._excluirDadosSelecionados_[chave]) window._excluirDadosSelecionados_[chave] = new Set();
+            if(marcado) window._excluirDadosSelecionados_[chave].add(String(id)); else window._excluirDadosSelecionados_[chave].delete(String(id));
+        }
+        // Efeitos colaterais específicos de cada coleção, replicados aqui das telas de exclusão
+        // individual (deleteOrcamento/deleteContrato/função de excluir projeto/deleteCrm) — ver comentário
+        // do bloco acima. Rodam DEPOIS que os registros já saíram da coleção principal (ids conhecidos).
+        function _efeitosColateraisExclusaoEmMassa_(chave, idsExcluidos, registrosExcluidos) {
+            if(chave === 'orcamentos') {
+                initOrcamentoItens(); initPropostaServicoItens();
+                db.orcamentoItens = (db.orcamentoItens||[]).filter(function(x){ return !idsExcluidos.includes(String(x.orcamentoId)); });
+                db.propostaServicoItens = (db.propostaServicoItens||[]).filter(function(x){ return !idsExcluidos.includes(String(x.orcamentoId)); });
+            } else if(chave === 'contratos') {
+                db.contratoAnexoItens = (db.contratoAnexoItens||[]).filter(function(x){ return !idsExcluidos.includes(String(x.contratoId)); });
+            } else if(chave === 'projects') {
+                idsExcluidos.forEach(function(id){
+                    db.financeiro = (db.financeiro||[]).filter(function(x){ return !x._projPagRef || !String(x._projPagRef).startsWith('projpag-'+id+'-'); });
+                });
+                financeData = null;
+            } else if(chave === 'leads') {
+                registrosExcluidos.forEach(function(l){ if(l && l.contadoBusca) _registrarProgressoAutomatico('busca', -1, l.dataContagemBusca); });
+            }
+        }
+        async function _excluirRegistrosEmMassa_(chave, registros) {
+            const cfg = LIXEIRA_COLECOES_CONFIG_[chave];
+            if(!registros.length) return 0;
+            const idsExcluidos = registros.map(function(r){ return String(r.id); });
+            registros.forEach(function(r){ moverParaLixeira_(chave, r); });
+            db[cfg.arr] = (db[cfg.arr]||[]).filter(function(x){ return !idsExcluidos.includes(String(x.id)); });
+            _efeitosColateraisExclusaoEmMassa_(chave, idsExcluidos, registros);
+            addHistory(registros.length + ' ' + cfg.label + '(s) excluído(s) em massa via Central de Configurações > Excluir Dados.');
+            saveDb();
+            renderDynamic();
+            return registros.length;
+        }
+        async function excluirSelecionadosDaColecao_(chave) {
+            const cfg = LIXEIRA_COLECOES_CONFIG_[chave];
+            const idsSelecionados = window._excluirDadosSelecionados_[chave] ? Array.from(window._excluirDadosSelecionados_[chave]) : [];
+            if(!idsSelecionados.length) { showToast('Selecione ao menos um item.'); return; }
+            const ok = await customConfirmReforcado('Excluir ' + idsSelecionados.length + ' ' + cfg.label.toLowerCase() + '(s)', 'Isso vai excluir ' + idsSelecionados.length + ' registro(s) de ' + cfg.label.toLowerCase() + '. Eles ficam recuperáveis na Lixeira por ' + lixeiraRetencaoDias_() + ' dia(s) — depois disso, somem em definitivo.');
+            if(!ok) return;
+            const registros = (db[cfg.arr]||[]).filter(function(x){ return idsSelecionados.includes(String(x.id)); });
+            const n = await _excluirRegistrosEmMassa_(chave, registros);
+            _centralConfigIrPara_('excluirDados');
+            showToast(n + ' registro(s) excluído(s) — recuperável(is) na Lixeira.');
+        }
+        async function excluirTodosDaColecao_(chave) {
+            const cfg = LIXEIRA_COLECOES_CONFIG_[chave];
+            const itens = (db[cfg.arr]||[]).slice();
+            if(!itens.length) { showToast('Não há nenhum registro pra excluir.'); return; }
+            const ok = await customConfirmReforcado('Excluir TODOS os ' + cfg.label.toLowerCase() + 's', 'Isso vai excluir TODOS os ' + itens.length + ' registro(s) de ' + cfg.label.toLowerCase() + ' cadastrados. Eles ficam recuperáveis na Lixeira por ' + lixeiraRetencaoDias_() + ' dia(s) — depois disso, somem em definitivo.');
+            if(!ok) return;
+            const n = await _excluirRegistrosEmMassa_(chave, itens);
+            _centralConfigIrPara_('excluirDados');
+            showToast('Todos os ' + cfg.label.toLowerCase() + 's foram excluídos ('+n+') — recuperáveis na Lixeira.');
         }
         function salvarRelatorioSecao_(chave, marcado) {
             setLink(chave, marcado ? 'sim' : 'nao');
@@ -15478,6 +15595,11 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.48', data: '13/07/2026', itens: [
+                'Nova aba "Excluir Dados" em Central de Configurações > Geral: apague leads, clientes, projetos, orçamentos, contratos, financeiro, fornecedores ou funcionários — item por item (com lista de seleção) ou todos de um tipo de uma vez — sempre exigindo digitar "EXCLUIR" para confirmar.',
+                'Tudo que é excluído por essa nova tela passa primeiro pela Lixeira, igual às exclusões de sempre — nada some na hora, fica recuperável.',
+                'Prazo padrão da Lixeira mudou de 30 para 14 dias (só afeta quem nunca configurou um prazo próprio em "Itens Excluídos (Lixeira)").'
+            ]},
             { versao: '3.47', data: '13/07/2026', itens: [
                 'Modelo de Importação em Massa da aba "Leads e Oportunidades" ganhou 16 colunas novas: LinkedIn da Empresa, Data de Entrada (preenchível), Score Manual, Decisor completo (Nome/Cargo/Telefone/Email/LinkedIn), Influenciador completo, Nome Atendente/Indicação, Telefone do Atendente e Origem do Canal. Antes o modelo cobria só uma fração dos campos reais de um Lead. Quem já tinha baixado o modelo antigo precisa baixar este de novo antes de reimportar.'
             ]},
@@ -15589,6 +15711,7 @@
                 { key: 'segurancaAcesso', label: 'Segurança de Acesso' },
                 { key: 'aprovacaoOrcamento', label: 'Aprovação de Orçamentos Altos' },
                 { key: 'lixeira', label: 'Itens Excluídos (Lixeira)' },
+                { key: 'excluirDados', label: 'Excluir Dados' }, // V3.48 — Rodada 7, item 8
                 { key: 'checklistSaude', label: 'Checklist de Saúde do App' },
                 { key: 'empresa', label: 'Produtora/Empresa' }, // pendente — abre Configurações da Empresa (3B)
                 { key: 'integracao', label: 'Integração' }, // pendente — abre Configurações do App (3C)
@@ -15712,6 +15835,8 @@
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Registros excluídos (leads, clientes, projetos, fornecedores, funcionários, orçamentos, financeiro e contratos) ficam guardados aqui antes de sumir de vez.</div>'+
                     '<div class="input-block" style="margin:0 0 14px; max-width:220px;"><label style="font-size:11px;">Manter por (dias)</label><input type="number" min="1" class="input-element" id="settLixeiraRetencaoDias" onchange="salvarLixeiraRetencaoDias_(this.value)"></div>'+
                     '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirLixeiraModal_()">Ver Itens Excluídos</button>';
+            } else if(atual === 'excluirDados') {
+                conteudo = _renderExcluirDadosTabContent_();
             } else if(atual === 'checklistSaude') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Checklist de Saúde do App</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Roda sozinho a cada carregamento do app e avisa no sino se algo estiver quebrado. Clique abaixo pra rodar uma verificação manual agora.</div>'+
