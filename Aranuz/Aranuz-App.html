@@ -1668,116 +1668,13 @@
     </div>
 
     <!-- V3.36 -- 13/07/2026 (Rodada 3B): #modalSettingsOverlay REMOVIDO -- o formulario de Configuracoes da Empresa virou a aba "Produtora/Empresa" da Central de Configuracoes (ver _renderEmpresaTabContent_()), sem modal proprio duplicado. -->
-    <div class="modal-overlay" id="modalAppConfigOverlay">
-        <div class="modal-view large" style="max-height:90vh; overflow-y:auto;">
-            <div class="modal-header-title">⚙ Configurações do App</div>
-
-            <!-- V3.08: Configurações do App deixou de ser dividida em seções com título/descrição — agora
-                 é uma grade única de campos, cada um mais estreito e com um botão de ajuda (mesmo ícone do
-                 Manual do App) ao lado, que abre um mini-tutorial específico daquele link/chave. Ver
-                 AJUDA_CAMPOS_APP_ e abrirAjudaCampoApp() logo abaixo de saveAppConfig(). -->
-            <div class="grid-2-col">
-                <div class="input-block">
-                    <label>URL da API (Apps Script Web App)</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settSheetsUrl" placeholder="https://script.google.com/macros/s/.../exec">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('sheetsUrl')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Conecte uma planilha do Drive</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settLinkPlanilhaDb" placeholder="https://docs.google.com/spreadsheets/...">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('linkPlanilhaDb')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>ID do Google Agenda (Agenda do Dia)</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settGoogleCalendarId" placeholder="Em branco = sem sincronizar">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('googleCalendarId')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Portal de Emissão de NFSe</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settLinkEmissorNfse" placeholder="https://...">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('linkEmissorNfse')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Plataforma de Cobrança</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settLinkAsaas" placeholder="https://...">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('linkAsaas')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Google Drive Principal</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settLinkDrivePrincipal" placeholder="https://drive.google.com/...">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('linkDrivePrincipal')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Pasta de Modelos de Proposta</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settLinkDriveModelosProposta" placeholder="https://drive.google.com/drive/folders/...">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('linkDriveModelosProposta')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Radar de Leads — Chave Google Places</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settGooglePlacesKey" placeholder="Cole aqui a chave">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('googlePlacesKey')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Busca de LinkedIn (Google Custom Search)</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settGoogleCseKey" placeholder="Chave de API (Custom Search)">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('googleCse')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>ID do Mecanismo de Busca (cx)</label>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" class="input-element" style="flex:1; min-width:0;" id="settGoogleCseCx" placeholder="Ex: a1b2c3d4e5f6g7h8i">
-                        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp('googleCse')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path stroke-linecap="round" d="M12 17h.01"/></svg></button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- V236: status de sincronização saiu do cabeçalho e virou algo bem discreto aqui no final —
-                 só o ícone de sincronizar manual + duas bolinhas de status (planilha/backup e Firebase).
-                 Ver atualizarStatusFirestoreUI_()/updateSyncUI() e o banner de alerta específico do
-                 Firebase (id firestoreAlertBanner, logo abaixo do cabeçalho do app). -->
-            <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:22px; padding-top:14px; border-top:1px solid var(--border-color);">
-                <button class="icon-btn" style="width:30px; height:30px;" title="Sincronizar agora (buscar dados novos da planilha)" onclick="forceSync()">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0113.5-3.5L20 8M19.5 15a8 8 0 01-13.5 3.5L4 16"/></svg>
-                </button>
-                <div class="sync-dot sync-nunca" id="syncDot" title="Status da sincronização com a planilha do Google Sheets (cópia de backup opcional)"></div>
-                <div class="sync-dot sync-nunca" id="firestoreSyncDot" title="Status da conexão com o Firestore (o banco de dados de verdade do app, na nuvem — independente da planilha)"></div>
-            </div>
-            <!-- V3.27 — Bloco 5: indicador de última sincronização visível direto aqui, sem precisar do
-                 Painel de Diagnóstico (triplo clique na versão). Atualizado junto com os dois pontos
-                 de status acima, ver fim de updateSyncUI(). -->
-            <div style="text-align:center; margin-top:8px; font-size:11px; color:var(--text-secondary);" id="ultimaSincronizacaoInfo">Última sincronização: —</div>
-
-            <div style="text-align:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">
-                <div style="font-size:18px; font-weight:800; color:var(--text-primary);">Aranuz Workspace</div>
-                <!-- V3.33 -- 13/07/2026 (Rodada 1): BUGFIX -- este rodapé mostrava "© Mang Film." fixo, visível pra todo usuário; trocado por "© Aranuz.", igual ao rodapé da barra lateral (linha ~574). -->
-                <div id="settVersionInfo" onclick="registrarCliqueDebug()" style="font-size:12px; color:var(--text-secondary); margin-top:4px; cursor:default; user-select:none;" title="Clique 3 vezes seguidas para abrir o painel de diagnóstico">Versão <span id="settVersionNum"></span> · © Aranuz. <span id="settVersionYear"></span> <span id="settBackendVersionInfo" style="color:var(--text-muted);"></span></div>
-            </div>
-
-            <div class="modal-buttons-row" style="justify-content:center;">
-                <button class="btn-secondary" onclick="closeAppConfigModal()">Cancelar</button>
-                <button class="btn-secondary" onclick="closeAppConfigModal(); abrirAppConfigAvancado();">Configurações Avançadas</button>
-                <button class="btn-primary" onclick="saveAppConfig()">Salvar</button>
-            </div>
-        </div>
-    </div>
+    <!-- V3.37 -- 13/07/2026 (Rodada 4, Central de Configurações 3C): #modalAppConfigOverlay REMOVIDO -- o
+         formulário de Configurações do App virou a aba "Integração" da Central de Configurações (ver
+         _renderIntegracaoTabContent_()), sem modal próprio duplicado. Os indicadores de sincronização
+         (syncDot/firestoreSyncDot), a última sincronização e a versão do app SAÍRAM desta tela (pedido do
+         cliente) -- essas informações já vivem no rodapé fixo da própria Central de Configurações (ver
+         _ccRodapeSincronizacao_(), chamada em _renderCentralConfig_()). updateSyncUI()/
+         atualizarStatusFirestoreUI_() continuam seguros de chamar (checam if(el) antes de usar cada id). -->
 
     <!-- V178: Configurações Avançadas virou uma PÁGINA (aba interna), não mais um modal — ver
          renderConfigAvancadaPage() e o registro em _tabRenderers['config-avancada']. -->
@@ -3419,13 +3316,22 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        // V3.38 — 13/07/2026 (Rodada 4, Central de Configurações 3D): aba "Importação, Exportação e
+        // Backups" migrada de verdade — layout em linhas exatamente como pedido (Importação em Massa;
+        // Importar/Exportar Configurações; Restaurar Base a partir de um Backup; Backup Diário Automático;
+        // Exportação Automática; Exportar Dados). Os 5 cartões equivalentes removidos de Configurações
+        // Avançadas (evita ids duplicados). Bugfix: ícone de ajuda aparecia como texto cru na tela nesses
+        // itens (string com aspas simples não interpola ${}); corrigido usando template literal.
+        // V3.37 — 13/07/2026 (Rodada 4, Central de Configurações 3C): aba "Integração" migrada de verdade
+        // — mesmos ids/funções (openAppConfigModal/saveAppConfig), 1 campo por linha, sem sync/versão/
+        // "Configurações Avançadas" nesta aba, com o campo de Integração com Firestore trazido pra cá.
         // V3.36 — 13/07/2026 (Rodada 3B, Central de Configurações): aba "Produtora/Empresa" migrada de
         // verdade — o formulário completo (Dados da Empresa, Representante Legal, Financeiro/Contábil,
         // Dados Bancários, Locação, Links e Formulários, Alertas Proativos) agora é o conteúdo real da
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.36';
+        const FRONTEND_VERSION = '3.38';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -8832,7 +8738,7 @@
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
                 <p><strong>Alertas Proativos:</strong> crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
                 <p><strong>Alertas Automáticos do Sistema</strong> (Configurações Avançadas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Configurações do App</em> (ícone de engrenagem) agora é dividida em duas telas: <strong>Básicas</strong> (URL da API, links do Banco de Dados/Drive/NFSe/Cobrança/Agenda, a Chave da API do Google Places do Radar de Leads, e a versão do app + copyright no rodapé), num modal rápido, e <strong>Avançadas</strong> (acessível pelo botão "Configurações Avançadas" dentro de Básicas), que agora abre como uma <strong>página própria</strong> (não mais um modal, por ter ficado grande demais pra uma janela) reunindo Alertas Automáticos do Sistema, Etapas e Categorias, <strong>Gerenciar Seções do Menu</strong>, Exportação Automática, Backup Diário Automático (habilitar/desabilitar + horário), Testar Conexão, Forçar Sincronização, Verificar Saúde dos Dados, Importação em Massa e a Zona de Risco — com um botão "← Voltar" que retorna pra onde você estava.</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore) e Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; Alertas, Personalização e Avançado ainda abrem a página "Configurações Avançadas" por um botão, enquanto essas migrações não terminam — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
                 <p><strong>Gerenciar Seções do Menu</strong> (dentro de Configurações Avançadas) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
@@ -15205,6 +15111,13 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.38', data: '13/07/2026', itens: [
+                'Central de Configurações — aba "Importação, Exportação e Backups": migrada pra dentro da Central, no layout em linhas pedido (Importação em Massa; Importar/Exportar Configurações; Restaurar Base a partir de um Backup; Backup Diário Automático; Exportação Automática; Exportar Dados). Exportar Dados ganhou entrada aqui (continua também disponível na barra lateral por enquanto).',
+                'Bugfix: ícone de ajuda que aparecia como texto cru "${ICON_AJUDA_SVG_14}" na tela corrigido nesses itens migrados.'
+            ]},
+            { versao: '3.37', data: '13/07/2026', itens: [
+                'Central de Configurações — aba "Integração": migrada pra dentro da Central (links da planilha/Drive/NFSe/cobrança/Agenda/APIs), 1 campo por linha, sem status de sincronização/versão nesta tela, sem botão "Configurações Avançadas", e com o campo de Integração com Firestore incluído aqui.'
+            ]},
             { versao: '3.27', data: '12/07/2026', itens: [
                 'Segurança de dados: sanitização reforçada em campos de texto livre e histórico, validação de tipo em Campos Personalizados numéricos.',
                 'Lixeira (soft delete) com restauração e retenção configurável para leads, clientes, projetos, fornecedores, funcionários, orçamentos, financeiro e contratos.',
@@ -15290,10 +15203,18 @@
             // MESMOS campos/IDs que existiam em Configurações Avançadas — reaproveita a mesma função de
             // popular valores, que já tem guarda if(el) pra cada campo (não quebra se um não existir).
             setTimeout(popularCamposConfigAvancada, 0);
-            // V3.36 — Rodada 3B: idem pra aba "Produtora/Empresa" — openSettingsModal() só popula campos
+            // V3.37 — 13/07/2026 (Rodada 4, Central de Configurações 3C): aba "Integração" migrada de
+        // #modalAppConfigOverlay (removido) — mesmos ids/funções (openAppConfigModal/saveAppConfig), 1
+        // campo por linha, sem sync/versão/"Configurações Avançadas" nesta aba, e com o campo de
+        // Integração com Firestore (settFirestoreEmpresaId) trazido de Configurações Avançadas pra cá.
+        // V3.36 — Rodada 3B: idem pra aba "Produtora/Empresa" — openSettingsModal() só popula campos
             // (não abre mais overlay nenhum), seguro de chamar mesmo se a aba ativa for outra (os ids
             // simplesmente não existem no DOM nesse caso, e cada linha já checa isso implicitamente).
             if (window._centralConfigTabAtual_ === 'empresa') setTimeout(openSettingsModal, 0);
+            // V3.37 — Rodada 4 (3C): idem pra aba "Integração" — openAppConfigModal() só popula campos
+            // (não abre mais overlay nenhum desde esta versão), seguro de chamar mesmo se a aba ativa
+            // for outra (os ids simplesmente não existem no DOM nesse caso).
+            if (window._centralConfigTabAtual_ === 'integracao') setTimeout(openAppConfigModal, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
@@ -15301,6 +15222,7 @@
             if(body) body.innerHTML = _renderCentralConfig_();
             setTimeout(popularCamposConfigAvancada, 0);
             if (key === 'empresa') setTimeout(openSettingsModal, 0);
+            if (key === 'integracao') setTimeout(openAppConfigModal, 0); // V3.37 — Rodada 4 (3C)
         }
         // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
         // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
@@ -15379,14 +15301,10 @@
                     _renderEmpresaTabContent_();
             } else if(atual === 'integracao') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Integração</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Links da planilha, Drive, NFSe, cobrança, Agenda, chaves de API do Radar de Leads e busca de LinkedIn, além da Integração com Firestore.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3C.</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); openAppConfigModal();">Abrir Configurações do App</button>';
+                    _renderIntegracaoTabContent_();
             } else if(atual === 'importExportBackup') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Importação, Exportação e Backups</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático e Exportação Automática.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3D (inclui o reagrupamento em linhas pedido).</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+                    _renderImportExportBackupTabContent_();
             } else if(atual === 'alertas') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Alertas</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Alertas Automáticos do Sistema, Alertas Personalizáveis e E-mails e Alertas.</div>'+
@@ -15824,6 +15742,127 @@
             showToast('Configurações da empresa salvas!');
             saveDb();
         }
+        // V3.38 — 13/07/2026 (Rodada 4, Central de Configurações 3D): conteúdo real da aba "Importação,
+        // Exportação e Backups" — layout em linhas exatamente como pedido pelo cliente (título numa linha,
+        // controles na linha seguinte, exceto Linha 3 e Linha 8 que ficam tudo numa linha só). Reaproveita
+        // 100% das funções e ids já existentes (populados por popularCamposConfigAvancada, chamada a cada
+        // troca de aba da Central) — só o layout/local mudou. BUGFIX: os cartões equivalentes em
+        // Configurações Avançadas usavam '${ICON_AJUDA_SVG_14}' dentro de string com aspas simples (não
+        // interpola — aparecia o texto cru na tela); aqui a função inteira usa template literal (backtick),
+        // então ${ICON_AJUDA_SVG_14} funciona de verdade.
+        function _renderImportExportBackupTabContent_() {
+            return `
+                <div style="display:flex; flex-direction:column; gap:18px; max-width:640px;">
+                    <div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;"><span class="form-section-title" style="margin:0;">Importação em Massa</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('importacaoMassa')">${ICON_AJUDA_SVG_14}</button></div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn-secondary" onclick="abrirSelecaoAbasImportacaoModal('baixar')">Baixar Modelo</button>
+                            <button class="btn-secondary" onclick="abrirSelecaoAbasImportacaoModal('importar')">Importar Planilha</button>
+                            <input type="file" id="inputImportarPlanilha" accept=".xlsx,.xls" style="display:none;" onchange="importarPlanilhaPreenchida(this.files[0]); this.value='';">
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                        <span class="form-section-title" style="margin:0;">Importar e Exportar Configurações do App</span>
+                        <button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('exportarImportarConfig')">${ICON_AJUDA_SVG_14}</button>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn-secondary" onclick="abrirImportarConfigModal()">Importar</button>
+                            <button class="btn-secondary" onclick="abrirExportarConfigModal()">Exportar</button>
+                            <input type="file" id="inputImportarConfig" accept=".xlsx,.xls" style="display:none;" onchange="importarConfiguracoes(this.files[0]); this.value='';">
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:14px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;"><span class="form-section-title" style="margin:0;">Restaurar Base a partir de um Backup</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('restaurarBackup')">${ICON_AJUDA_SVG_14}</button></div>
+                        <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+                            <div class="input-block" style="margin:0; flex:1; min-width:220px;"><label>Link (ou ID) da planilha de backup</label>
+                                <input type="text" class="input-element" id="settImportarBackupUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                            </div>
+                            <button class="btn-secondary" id="btnImportarBackup" onclick="importarBackupParaFirebase()">Importar</button>
+                        </div>
+                        <div id="settImportarBackupStatus" style="font-size:11px; color:var(--text-secondary); margin-top:8px;"></div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:14px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;"><span class="form-section-title" style="margin:0;">Backup Diário Automático</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('backupDiario')">${ICON_AJUDA_SVG_14}</button></div>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:10px;"><input type="checkbox" class="chk-toggle-claude" id="settBackupAutoHabilitado" onchange="salvarBackupAutomatico()"> Backup diário automático habilitado</label>
+                        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                            <div class="input-block" style="margin:0; min-width:120px;"><label>Horário</label><select class="input-element" id="settBackupAutoHora" onchange="salvarBackupAutomatico()">${Array.from({length:24}, function(_,h){ return `<option value="${h}">${String(h).padStart(2,'0')}:00</option>`; }).join('')}</select></div>
+                            <div class="input-block" style="margin:0; min-width:120px;"><label>Cópias mantidas</label>
+                                <input type="number" class="input-element" id="settRetencaoBackups" min="1" step="1" placeholder="30" onchange="salvarRetencaoBackups(this.value)">
+                            </div>
+                            <button class="btn-secondary" id="btnBackupAgora" onclick="fazerBackupAgora()">Fazer Backup Agora</button>
+                        </div>
+                        <div id="settBackupAutoStatus" style="font-size:11px; color:var(--text-secondary); margin-top:8px;"></div>
+                        <div id="settBackupAgoraStatus" style="font-size:11px; color:var(--text-secondary); margin-top:4px;"></div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                        <span class="form-section-title" style="margin:0;">Exportação Automática</span>
+                        <button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('exportAuto')">${ICON_AJUDA_SVG_14}</button>
+                        <div class="input-block" style="margin:0; min-width:140px;"><label>Seção</label><select class="input-element" id="settExportAutoSecao">
+                            <option value="">Nenhuma (desativada)</option>
+                            <option value="comercial">Comercial</option>
+                            <option value="orcamentos">Orçamentos</option>
+                            <option value="projetos">Projetos</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="equipamentos">Equipamentos e Locações</option>
+                            <option value="rh">Equipe e RH</option>
+                            <option value="metas">Metas e Satisfação</option>
+                        </select></div>
+                        <div class="input-block" style="margin:0; min-width:140px;"><label>Frequência</label><select class="input-element" id="settExportAutoFrequencia">
+                            <option value="diaria">Diária</option>
+                            <option value="semanal">Semanal (segundas)</option>
+                            <option value="mensal">Mensal (dia 1º)</option>
+                        </select></div>
+                        <button class="btn-secondary" onclick="salvarExportacaoAutomatica()">Salvar</button>
+                        <div id="settExportAutoStatus" style="font-size:11px; color:var(--text-secondary); flex-basis:100%;"></div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:14px;">
+                        <button type="button" class="submenu-link" onclick="closeGenericModal('modalCentralConfigOverlay'); openExportModal();" style="display:flex; align-items:center; gap:8px; padding:8px 0; border:none; background:none; cursor:pointer; font-size:13px; color:var(--text-primary);">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Exportar Dados
+                        </button>
+                    </div>
+                </div>`;
+        }
+        // V3.37 — 13/07/2026 (Rodada 4, Central de Configurações 3C): formulário de Configurações do App
+        // (antes no modal próprio #modalAppConfigOverlay, removido nesta versão) agora é o conteúdo real
+        // da aba "Integração" — MESMOS ids de campo de sempre, então openAppConfigModal()/saveAppConfig()
+        // continuam funcionando sem nenhuma mudança nelas. Pedido do cliente: 1 campo por linha (não mais
+        // grade de 2 colunas); sem status de sincronização/versão nesta aba; sem botão "Configurações
+        // Avançadas"; campo "ID da Empresa (Firebase)" (Integração com Firestore) migrado pra cá — por
+        // isso o card equivalente foi removido de Configurações Avançadas (evita 2 elementos com o mesmo
+        // id no DOM ao mesmo tempo).
+        function _renderIntegracaoTabContent_() {
+            function campo(label, id, placeholder, ajudaKey) {
+                return '<div class="input-block">'+
+                    '<label>'+esc(label)+'</label>'+
+                    '<div style="display:flex; gap:6px; align-items:center;">'+
+                    '<input type="text" class="input-element" style="flex:1; min-width:0;" id="'+id+'" placeholder="'+esc(placeholder)+'">'+
+                    '<button type="button" class="icon-btn" style="flex-shrink:0;" title="Ajuda sobre este campo" onclick="abrirAjudaCampoApp(\''+ajudaKey+'\')">'+ICON_AJUDA_SVG_14+'</button>'+
+                    '</div></div>';
+            }
+            return '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:14px;">Links da planilha, Drive, NFSe, cobrança, Agenda, chaves de API do Radar de Leads, busca de LinkedIn e Integração com Firestore.</div>'+
+                '<div style="display:flex; flex-direction:column; gap:12px; max-width:640px;">'+
+                campo('URL da API (Apps Script Web App)', 'settSheetsUrl', 'https://script.google.com/macros/s/.../exec', 'sheetsUrl')+
+                campo('Conecte uma planilha do Drive', 'settLinkPlanilhaDb', 'https://docs.google.com/spreadsheets/...', 'linkPlanilhaDb')+
+                campo('ID do Google Agenda (Agenda do Dia)', 'settGoogleCalendarId', 'Em branco = sem sincronizar', 'googleCalendarId')+
+                campo('Portal de Emissão de NFSe', 'settLinkEmissorNfse', 'https://...', 'linkEmissorNfse')+
+                campo('Plataforma de Cobrança', 'settLinkAsaas', 'https://...', 'linkAsaas')+
+                campo('Google Drive Principal', 'settLinkDrivePrincipal', 'https://drive.google.com/...', 'linkDrivePrincipal')+
+                campo('Pasta de Modelos de Proposta', 'settLinkDriveModelosProposta', 'https://drive.google.com/drive/folders/...', 'linkDriveModelosProposta')+
+                campo('Radar de Leads — Chave Google Places', 'settGooglePlacesKey', 'Cole aqui a chave', 'googlePlacesKey')+
+                campo('Busca de LinkedIn (Google Custom Search)', 'settGoogleCseKey', 'Chave de API (Custom Search)', 'googleCse')+
+                campo('ID do Mecanismo de Busca (cx)', 'settGoogleCseCx', 'Ex: a1b2c3d4e5f6g7h8i', 'googleCse')+
+                '</div>'+
+                '<div class="form-section-title">Integração com Firestore</div>'+
+                '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Faz os cadastros vindos dos formulários públicos (Clientes, Fornecedores, NPS) aparecerem no app quase na hora. Vazio = gravação no Firestore desligada (só a planilha recebe).</div>'+
+                '<div class="input-block" style="max-width:420px;">'+
+                '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><label style="margin:0;">ID da Empresa (Firebase)</label><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada(\'firestore\')">'+ICON_AJUDA_SVG_14+'</button></div>'+
+                '<input type="text" class="input-element" id="settFirestoreEmpresaId" placeholder="copie do Painel de Diagnóstico" onchange="salvarFirestoreEmpresaId_(this.value)">'+
+                '</div>'+
+                '<div class="modal-buttons-row">'+
+                '<button class="btn-secondary" onclick="openAppConfigModal()">Descartar Alterações</button>'+
+                '<button class="btn-primary" onclick="saveAppConfig()">Salvar</button>'+
+                '</div>';
+        }
         function openAppConfigModal() {
             document.getElementById('settLinkPlanilhaDb').value = getLink('linkPlanilhaDb');
             document.getElementById('settLinkDrivePrincipal').value = getLink('linkDrivePrincipal');
@@ -15835,7 +15874,9 @@
             document.getElementById('settGoogleCseKey').value = getLink('googleCseKey');
             document.getElementById('settGoogleCseCx').value = getLink('googleCseCx');
             document.getElementById('settSheetsUrl').value = getSheetsUrlBase_(); // V3.07: campo mostra a URL crua, sem a chave
-            document.getElementById('modalAppConfigOverlay').style.display = 'flex';
+            const elFsId = document.getElementById('settFirestoreEmpresaId'); if(elFsId) elFsId.value = getLink('firestoreEmpresaId') || ''; // V3.37 — Rodada 4 (3C)
+            // V3.37 — 13/07/2026 (Rodada 4, 3C): este formulário deixou de viver num modal próprio — agora
+            // é o conteúdo da aba "Integração" da Central de Configurações. Sem overlay pra mostrar.
         }
         // V178: "Configurações Avançadas" virou uma PÁGINA própria (aba interna, "config-avancada"),
         // em vez de um modal — ficou grande demais pra caber bem numa janela. abrirAppConfigAvancado()
@@ -16461,13 +16502,9 @@
                             <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px;" id="btnToggleAlertasLimite" onclick="toggleListaAvancada('alertasLimiteExtra','btnToggleAlertasLimite', 10)">Mostrar todos (10)</button>
                         </div>
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Integração com Firestore</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('firestore')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div class="input-block" style="margin:0;">
-                                <label>ID da Empresa (Firebase)</label>
-                                <input type="text" class="input-element" id="settFirestoreEmpresaId" placeholder="copie do Painel de Diagnóstico" onchange="salvarFirestoreEmpresaId_(this.value)">
-                            </div>
-                        </div>
+                        <!-- V3.37 -- 13/07/2026 (Rodada 4, 3C): card "Integração com Firestore" (campo
+                             settFirestoreEmpresaId) REMOVIDO daqui -- migrado pra aba "Integração" da
+                             Central de Configurações (evita 2 elementos com o mesmo id no DOM). -->
 
                         <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Etapas e Categorias</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('etapas')">${ICON_AJUDA_SVG_14}</button></div>
@@ -16484,71 +16521,11 @@
                             <button class="btn-secondary" onclick="abrirGerenciarMenuModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>Gerenciar Seções do Menu</button>
                         </div>
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Exportação Automática</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('exportAuto')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-                                <div class="input-block" style="margin:0; min-width:140px; flex:1;"><label>Seção</label><select class="input-element" id="settExportAutoSecao">
-                                    <option value="">Nenhuma (desativada)</option>
-                                    <option value="comercial">Comercial</option>
-                                    <option value="orcamentos">Orçamentos</option>
-                                    <option value="projetos">Projetos</option>
-                                    <option value="financeiro">Financeiro</option>
-                                    <option value="equipamentos">Equipamentos e Locações</option>
-                                    <option value="rh">Equipe e RH</option>
-                                    <option value="metas">Metas e Satisfação</option>
-                                </select></div>
-                                <div class="input-block" style="margin:0; min-width:140px; flex:1;"><label>Frequência</label><select class="input-element" id="settExportAutoFrequencia">
-                                    <option value="diaria">Diária</option>
-                                    <option value="semanal">Semanal (segundas)</option>
-                                    <option value="mensal">Mensal (dia 1º)</option>
-                                </select></div>
-                                <button class="btn-secondary" style="border-radius:20px; background:var(--accent-blue); color:#fff; border:none;" onclick="salvarExportacaoAutomatica()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Salvar</button>
-                            </div>
-                            <div id="settExportAutoStatus" style="font-size:11px; color:var(--text-secondary); margin-top:8px;"></div>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Backup Diário Automático</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('backupDiario')">${ICON_AJUDA_SVG_14}</button></div>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:10px;"><input type="checkbox" class="chk-toggle-claude" id="settBackupAutoHabilitado" onchange="salvarBackupAutomatico()"> Backup diário automático habilitado</label>
-                            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-                                <div class="input-block" style="margin:0; min-width:120px;"><label>Horário</label><select class="input-element" id="settBackupAutoHora" onchange="salvarBackupAutomatico()">${Array.from({length:24}, function(_,h){ return `<option value="${h}">${String(h).padStart(2,'0')}:00</option>`; }).join('')}</select></div>
-                                <div class="input-block" style="margin:0; min-width:120px;"><label>Cópias mantidas</label>
-                                    <input type="number" class="input-element" id="settRetencaoBackups" min="1" step="1" placeholder="30" onchange="salvarRetencaoBackups(this.value)">
-                                </div>
-                                <button class="btn-secondary" id="btnBackupAgora" onclick="fazerBackupAgora()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 8v13H3V8"></path><path d="M1 3h22v5H1z"></path><line x1="10" y1="12" x2="14" y2="12"></line></svg>Fazer Backup Agora</button>
-                            </div>
-                            <div id="settBackupAutoStatus" style="font-size:11px; color:var(--text-secondary); margin-top:8px;"></div>
-                            <div id="settBackupAgoraStatus" style="font-size:11px; color:var(--text-secondary); margin-top:4px;"></div>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Importação em Massa</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('importacaoMassa')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <button class="btn-secondary" onclick="abrirSelecaoAbasImportacaoModal('baixar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Baixar Modelo</button>
-                                <button class="btn-secondary" onclick="abrirSelecaoAbasImportacaoModal('importar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Importar Planilha</button>
-                                <input type="file" id="inputImportarPlanilha" accept=".xlsx,.xls" style="display:none;" onchange="importarPlanilhaPreenchida(this.files[0]); this.value='';">
-                            </div>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Restaurar Base a partir de um Backup</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('restaurarBackup')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
-                                <div class="input-block" style="margin:0; flex:1; min-width:200px;"><label>Link (ou ID) da planilha de backup</label>
-                                    <input type="text" class="input-element" id="settImportarBackupUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
-                                </div>
-                                <button class="btn-secondary" id="btnImportarBackup" onclick="importarBackupParaFirebase()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Importar</button>
-                            </div>
-                            <div id="settImportarBackupStatus" style="font-size:11px; color:var(--text-secondary); margin-top:8px;"></div>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Exportar / Importar Configurações</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('exportarImportarConfig')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <button class="btn-secondary" onclick="abrirExportarConfigModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Exportar</button>
-                                <button class="btn-secondary" onclick="abrirImportarConfigModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Importar</button>
-                                <input type="file" id="inputImportarConfig" accept=".xlsx,.xls" style="display:none;" onchange="importarConfiguracoes(this.files[0]); this.value='';">
-                            </div>
-                        </div>
+                        <!-- V3.38 -- 13/07/2026 (Rodada 4, 3D): cartões "Exportação Automática", "Backup
+                             Diário Automático", "Importação em Massa", "Restaurar Base a partir de um
+                             Backup" e "Exportar / Importar Configurações" REMOVIDOS daqui -- migrados pra
+                             aba "Importação, Exportação e Backups" da Central de Configurações (evita
+                             elementos com o mesmo id duplicados no DOM). -->
 
                         <div style="border:1px solid var(--accent-red); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Zona de Risco</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('zonaRisco')">${ICON_AJUDA_SVG_14}</button></div>
@@ -16678,7 +16655,9 @@
                 showToast('Não foi possível salvar agora — verifique sua conexão e tente de novo.');
             }
         }
-        function closeAppConfigModal() { document.getElementById('modalAppConfigOverlay').style.display = 'none'; }
+        // V3.37 — 13/07/2026 (Rodada 4, 3C): sem modal próprio pra fechar mais — mantida como alias vazio
+        // só porque saveAppConfig() (mais abaixo) ainda a chamava; não faz mais nada.
+        function closeAppConfigModal() { /* noop desde V3.37 — ver comentário acima */ }
         // V3.08: Configurações do App virou uma grade única de campos (sem seções/textos fixos) — cada
         // botão de ajuda ao lado de uma caixa abre este mini-tutorial específico, no lugar dos parágrafos
         // de descrição que existiam antes fora das caixas.

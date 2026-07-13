@@ -1,6 +1,11 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_35.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_38.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba "Importação, Exportação e Backups" da Central de
+ * Configurações (3D) é 100% front-end (App), nenhuma rota/coluna nova.
+ * V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba "Integração" da Central de Configurações (3C) é
+ * 100% front-end (App), nenhuma rota/coluna nova.
+ * V3.36 — 13/07/2026 (Rodada 3B): só pareamento — migração da aba Empresa é 100% front-end (App).
  * V3.35 — 13/07/2026 (Rodada 3A): só pareamento — Central de Configurações é 100% front-end (App).
  * V3.34 — 13/07/2026 (Rodada 2): só pareamento de versão — a sincronização retroativa e o botão
  * "Reportar Erro" desta rodada usam a MESMA rota de POST/coleções já existentes, nenhuma mudança aqui.
@@ -278,7 +283,10 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.35"; // V3.35 — 13/07/2026 (Rodada 3A): só pareamento — Central de Config é 100% front-end.
+var BACKEND_VERSION = "3.38"; // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
+// V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.
+// V3.36 — 13/07/2026 (Rodada 3B): só pareamento — migração da aba Empresa é 100% front-end.
+// V3.35 — 13/07/2026 (Rodada 3A): só pareamento — Central de Config é 100% front-end.
 // V3.34 — 13/07/2026 (Rodada 2): só pareamento — nenhuma rota nova.
 // V3.33 — 13/07/2026 (Rodada 1): só pareamento — mudanças desta rodada
 // (idioma do e-mail, tema claro, onboarding, ícone de ajuda, limpeza de marca) foram todas de front-end.
