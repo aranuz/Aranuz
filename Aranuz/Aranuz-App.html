@@ -3457,7 +3457,13 @@
         // sozinha em segundo plano). Se alguma coleção divergir, a bolinha da Planilha vira âmbar (estado
         // novo "divergente", sem piscar — diferente do amarelo de "sem conexão") e um aviso aparece no
         // sino, em vez de continuar mostrando verde só porque o último envio/leitura funcionou.
-        const FRONTEND_VERSION = '3.46';
+        // V3.47 — 13/07/2026 (Rodada 6, item 5): modelo de Importação em Massa da aba "Leads e
+        // Oportunidades" ganhou 16 colunas novas no final (LinkedIn da Empresa, Data de Entrada
+        // preenchível, Score Manual, Decisor completo, Influenciador completo, Nome Atendente/Indicação,
+        // Telefone do Atendente, Origem do Canal) — antes cobria só uma fração dos campos reais de um
+        // Lead. Quem já baixou o modelo antigo precisa baixar este de novo antes de reimportar (o
+        // cabeçalho é conferido exatamente, coluna por coluna).
+        const FRONTEND_VERSION = '3.47';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -15472,6 +15478,9 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.47', data: '13/07/2026', itens: [
+                'Modelo de Importação em Massa da aba "Leads e Oportunidades" ganhou 16 colunas novas: LinkedIn da Empresa, Data de Entrada (preenchível), Score Manual, Decisor completo (Nome/Cargo/Telefone/Email/LinkedIn), Influenciador completo, Nome Atendente/Indicação, Telefone do Atendente e Origem do Canal. Antes o modelo cobria só uma fração dos campos reais de um Lead. Quem já tinha baixado o modelo antigo precisa baixar este de novo antes de reimportar.'
+            ]},
             { versao: '3.46', data: '13/07/2026', itens: [
                 'O status "sincronizado" da Planilha agora é conferido de verdade: a cada 15 minutos, o app compara o Firestore e a Planilha coleção por coleção. Se alguma quantidade não bater, a bolinha de status fica amarela (sem piscar) em vez de continuar verde só porque o último envio/leitura funcionou — e um aviso aparece no sino.',
                 'Painel de Diagnóstico ganhou um campo novo mostrando o resultado e o horário da última comparação real entre Firestore e Planilha.'
@@ -27167,18 +27176,38 @@
             },
             {
                 aba: 'Leads e Oportunidades', colecao: 'leads',
-                headers: ['Empresa','Segmento','Cidade','Estado (sigla)','Tipo de Cliente','Telefone da Empresa','Site','Instagram','Etapa (ver aba Referência - Etapas do Funil)','Observação Inicial'],
-                exemplo: ['Exemplo Indústria Ltda','Indústria','Serra','ES','Cliente Final','(27) 90000-0000','exemplo.com','@exemploindustria','No Radar','Encontrado via indicação'],
+                // V3.47 — 13/07/2026 (Rodada 6, item 5): modelo tinha bem menos colunas do que os campos
+                // reais de um Lead no app (faltava LinkedIn da empresa, Score Manual, Data de Entrada
+                // preenchível, os 2 contatos — Decisor/Influenciador — e os campos novos de "Nome
+                // Atendente/Indicação"/Telefone da V3.44). Todas as colunas novas foram acrescentadas no
+                // FINAL (nunca no meio), pelo mesmo motivo de sempre: leitura é 100% posicional (r[N]) —
+                // ver _validarCabecalhoImportacao_ logo abaixo, que recusa a aba inteira se o cabeçalho não
+                // bater; quem já tinha baixado o modelo antigo precisa baixar este de novo antes de reimportar.
+                headers: ['Empresa','Segmento','Cidade','Estado (sigla)','Tipo de Cliente','Telefone da Empresa','Site','Instagram','Etapa (ver aba Referência - Etapas do Funil)','Observação Inicial',
+                    'LinkedIn da Empresa','Data de Entrada (AAAA-MM-DD, opcional — vazio usa a data de hoje)','Score Manual (0 a 100, opcional)',
+                    'Decisor — Nome','Decisor — Cargo','Decisor — Telefone','Decisor — Email','Decisor — LinkedIn',
+                    'Influenciador — Nome','Influenciador — Cargo','Influenciador — Telefone','Influenciador — Email','Influenciador — LinkedIn',
+                    'Nome Atendente/Indicação','Telefone do Atendente','Origem do Canal (opcional — vazio usa "Importação em Massa")'],
+                exemplo: ['Exemplo Indústria Ltda','Indústria','Serra','ES','Cliente Final','(27) 90000-0000','exemplo.com','@exemploindustria','No Radar','Encontrado via indicação',
+                    'linkedin.com/company/exemplo-industria','2026-01-10','70',
+                    'Fulano Decisor','Diretor(a)','(27) 90000-0005','decisor@exemplo.com','linkedin.com/in/fulano-decisor',
+                    'Ciclana Influenciadora','Gerente de Marketing','(27) 90000-0006','influenciadora@exemplo.com','linkedin.com/in/ciclana-influenciadora',
+                    'Beltrano Recepção','(27) 90000-0007','Indicação'],
                 parseLinha: function(r){
                     const company = String(r[0]||'').trim();
                     if(!company) return null;
                     const etapaObj = crmStages.find(function(s){ return s.name.toLowerCase() === String(r[8]||'').trim().toLowerCase(); });
                     const obs = String(r[9]||'').trim();
-                    return { dateIn: getTodayString().split('-').reverse().join('/'), company: company, segment: String(r[1]||''),
+                    const dataEntradaInformada = toYMDExcel(r[11]);
+                    const scoreManualRaw = String(r[12]||'').trim();
+                    const scoreManualVal = scoreManualRaw === '' ? null : Math.max(0, Math.min(100, Number(scoreManualRaw) || 0));
+                    return { dateIn: (dataEntradaInformada ? dataEntradaInformada.split('-').reverse().join('/') : getTodayString().split('-').reverse().join('/')), company: company, segment: String(r[1]||''),
                         city: String(r[2]||''), state: String(r[3]||'ES')||'ES', clientType: String(r[4]||'Cliente Final'),
-                        companyPhone: String(r[5]||''), site: String(r[6]||''), instagram: String(r[7]||''), linkedin: '',
-                        stage: etapaObj ? etapaObj.id : 0, nextAction: '', score: { mkt:0, fin:0, align:0 },
-                        decisor: { nome:'', cargo:'', tel:'', email:'', linkedin:'' }, influenciador: { nome:'', cargo:'', tel:'', email:'', linkedin:'' },
+                        companyPhone: String(r[5]||''), site: String(r[6]||''), instagram: String(r[7]||''), linkedin: String(r[10]||''),
+                        stage: etapaObj ? etapaObj.id : 0, nextAction: '', score: { mkt:0, fin:0, align:0, manual: scoreManualVal },
+                        decisor: { nome:String(r[13]||''), cargo:String(r[14]||''), tel:String(r[15]||''), email:String(r[16]||''), linkedin:String(r[17]||'') },
+                        influenciador: { nome:String(r[18]||''), cargo:String(r[19]||''), tel:String(r[20]||''), email:String(r[21]||''), linkedin:String(r[22]||'') },
+                        atendenteNome: String(r[23]||''), atendenteTelefone: String(r[24]||''), contatosAdicionais: [],
                         dores: '', gatilho: '', maturidade: '', pitch: '',
                         history: obs ? [{ date: new Date().toLocaleString('pt-BR'), text: 'Observação (importação): '+obs }] : [],
                         // V3.05 — BUGFIX: faltava "origemCanal" (o campo de verdade lido pelo card do
@@ -27186,7 +27215,7 @@
                         // no app) — todo lead importado aparecia como "Não informado" nesse relatório e sem
                         // selo de origem no Radar. "origem" (abaixo) é um marcador interno à parte, quase não
                         // usado pra exibição; mantido por compatibilidade.
-                        origemCanal: 'Importação em Massa',
+                        origemCanal: String(r[25]||'').trim() || 'Importação em Massa',
                         origem: 'importacao', qualification: 'pendente' };
                 }
             },

@@ -1,6 +1,10 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_46.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_47.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.47 — 13/07/2026 (Rodada 6, item 5): só pareamento — nenhuma mudança neste arquivo. As 16 colunas
+ * novas do modelo de Importação em Massa (Leads e Oportunidades) usam campos que já existem em OPP_COLS
+ * desde a V3.44 (atendente_nome/atendente_telefone) ou já eram gravados via saveDb()/_flushDb() normal
+ * (linkedin_empresa, score manual, decisor/influenciador, data_entrada) — nenhuma rota/coluna nova aqui.
  * V3.46 — 13/07/2026 (Rodada 5, item 13): só pareamento — nenhuma mudança neste arquivo. A comparação
  * real Firestore x Planilha (nova bolinha "divergente") reaproveita 100% a mesma leitura da planilha
  * (doGet com parâmetro "secoes") que já existia — nenhuma rota/coluna nova no backend.
@@ -307,7 +311,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.46"; // V3.46 — 13/07/2026 (Rodada 5): só pareamento — ver changelog no topo do arquivo.
+var BACKEND_VERSION = "3.47"; // V3.47 — 13/07/2026 (Rodada 6): só pareamento — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.
