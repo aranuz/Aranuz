@@ -310,6 +310,13 @@
            aba — altura FIXA (não só um teto), com cada aba rolando internamente (ver .modal-tab-content
            dentro dele, que já usa max-height/overflow-y próprios). */
         #modalProjectOverlay .modal-view { height: 90vh; display: flex; flex-direction: column; }
+        /* V3.35 — 13/07/2026 (Rodada 3A): Central de Configurações com tamanho fixo, igual ao modal de
+           Projetos — pedido do cliente ("mesmo tamanho da janela de cadastro de Projetos"). A área de
+           abas+conteúdo (.cc-body) ocupa o espaço restante e rola por dentro; título e rodapé ficam fixos. */
+        #modalCentralConfigOverlay .modal-view { height: 90vh; display: flex; flex-direction: column; }
+        #modalCentralConfigOverlay .cc-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; align-items: stretch; }
+        #modalCentralConfigOverlay .cc-sidebar { overflow-y: auto; }
+        #modalCentralConfigOverlay .cc-content { flex: 1; min-width: 0; overflow-y: auto; }
         #modalProjectOverlay .modal-header-title, #modalProjectOverlay .modal-tabs { flex-shrink: 0; }
         #modalProjectOverlay .modal-tab-content.active { flex: 1; overflow-y: auto; min-height: 0; }
         /* V3.10 — BUGFIX: relatado que os botões "Cadastrar Fornecedor"/"Cancelar" apareciam parcialmente
@@ -3593,7 +3600,15 @@
         // MELHORIA" no cabeçalho — texto livre do usuário vai pra coleção reportsUsuarios, só o admin lê
         // (ver Regras_Firebase_V3_34.txt); (3) FB_EMPRESA_ID: fallback trocado de 'marangatu' pra 'aranuz'
         // (confirmado como código morto — não precisa de migração de dados).
-        const FRONTEND_VERSION = '3.34';
+        // V3.35 — 13/07/2026 (Rodada 3A, Central de Configurações): primeira leva da reconstrução pedida —
+        // modal com tamanho FIXO (igual ao de Projetos), estrutura completa de abas na ordem pedida
+        // (CONFIGURAÇÕES: Geral, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens
+        // Excluídos, Checklist de Saúde, Produtora/Empresa, Integração, Import./Export./Backups, Alertas,
+        // Personalização, Avançado — AJUDA: Atalhos, Novidades, Manual), rodapé fixo com sincronização +
+        // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
+        // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
+        // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        const FRONTEND_VERSION = '3.35';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -15424,32 +15439,65 @@
         // como referência visual). Temas/Atalhos/Novidades mostram o conteúdo direto na própria janela;
         // Empresa/App/Avançadas abrem a tela real já existente — nenhuma dessas funções foi alterada,
         // só deixaram de ter botão próprio no cabeçalho.
+        // V3.35 — 13/07/2026 (Rodada 3A): estrutura COMPLETA pedida pelo cliente pra Central de
+        // Configurações — ordem e nomes exatos das seções/abas. Abas marcadas com "pendente" no
+        // comentário ao lado ainda abrem a tela antiga por um botão (não é regressão — era assim antes),
+        // e vão ganhar conteúdo próprio nas próximas sub-rodadas (3B, 3C...), até a página de
+        // Configurações Avançadas e as demais janelas cheias poderem ser excluídas de vez.
         const CENTRAL_CONFIG_GRUPOS_ = [
-            { grupo: 'Empresa', abas: [
-                { key: 'empresa', label: '🏢 Empresa' },
-                { key: 'app', label: '⚙ Configurações do App' },
-                { key: 'avancadas', label: '🛠️ Avançadas' }
-            ]},
-            { grupo: 'Aparência', abas: [
-                { key: 'temas', label: '🎨 Temas' }
+            { grupo: 'Configurações', abas: [
+                { key: 'geral', label: 'Geral' },
+                { key: 'aparencia', label: 'Aparência' },
+                { key: 'segurancaAcesso', label: 'Segurança de Acesso' },
+                { key: 'aprovacaoOrcamento', label: 'Aprovação de Orçamentos Altos' },
+                { key: 'lixeira', label: 'Itens Excluídos (Lixeira)' },
+                { key: 'checklistSaude', label: 'Checklist de Saúde do App' },
+                { key: 'empresa', label: 'Produtora/Empresa' }, // pendente — abre Configurações da Empresa (3B)
+                { key: 'integracao', label: 'Integração' }, // pendente — abre Configurações do App (3C)
+                { key: 'importExportBackup', label: 'Importação, Exportação e Backups' }, // pendente (3D)
+                { key: 'alertas', label: 'Alertas' }, // pendente (3E)
+                { key: 'personalizacao', label: 'Personalização' }, // pendente (3F)
+                { key: 'avancado', label: 'Avançado' } // pendente — LGPD/Sincronização/Restaurar Fábrica (3G)
             ]},
             { grupo: 'Ajuda', abas: [
-                { key: 'atalhos', label: '⌨️ Atalhos de Teclado' },
-                { key: 'novidades', label: '🆕 Novidades' }
+                { key: 'atalhos', label: 'Atalhos de Teclado' },
+                { key: 'novidades', label: 'Novidades do Aranuz' },
+                { key: 'manual', label: 'Manual de Uso do Aranuz' }
             ]}
         ];
         const CENTRAL_CONFIG_TABS_ = CENTRAL_CONFIG_GRUPOS_.reduce(function(acc, g){ return acc.concat(g.abas); }, []);
         function abrirCentralConfig_(tabInicial) {
-            window._centralConfigTabAtual_ = tabInicial || 'temas';
+            window._centralConfigTabAtual_ = tabInicial || 'geral';
             openGenericModal('modalCentralConfigOverlay', _renderCentralConfig_(), true);
+            // V3.35: alguns conteúdos (Segurança de Acesso, Lixeira, Aprovação de Orçamentos Altos) usam os
+            // MESMOS campos/IDs que existiam em Configurações Avançadas — reaproveita a mesma função de
+            // popular valores, que já tem guarda if(el) pra cada campo (não quebra se um não existir).
+            setTimeout(popularCamposConfigAvancada, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
             const body = document.getElementById('modalCentralConfigOverlayBody');
             if(body) body.innerHTML = _renderCentralConfig_();
+            setTimeout(popularCamposConfigAvancada, 0);
+        }
+        // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
+        // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
+        // mantêm atualizados, sem precisar duplicar elemento com o mesmo id (evitaria only-primeiro-ganha
+        // do getElementById). Atualiza de novo a cada troca de aba, que já re-renderiza este rodapé.
+        function _ccRodapeSincronizacao_() {
+            const statusSheets = localStorage.getItem('mang_sync_status');
+            const statusFirestore = localStorage.getItem('mhub_firestore_sync_status') || 'nunca';
+            const ts = Number(localStorage.getItem('mang_last_sync_ts') || 0);
+            const corSheets = statusSheets === 'online' ? 'var(--accent-green)' : (statusSheets === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)');
+            const corFirestore = statusFirestore === 'online' ? 'var(--accent-green)' : (statusFirestore === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)');
+            return '<div style="display:flex; align-items:center; justify-content:center; gap:18px; flex-wrap:wrap; font-size:11px; color:var(--text-secondary); padding:10px 0;">'
+                + '<span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:'+corSheets+'; margin-right:5px;"></span>Planilha (Sheets)</span>'
+                + '<span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:'+corFirestore+'; margin-right:5px;"></span>Firestore</span>'
+                + '<span>Última sincronização: '+(ts ? new Date(ts).toLocaleString('pt-BR') : 'nunca')+'</span>'
+                + '</div>';
         }
         function _renderCentralConfig_() {
-            const atual = window._centralConfigTabAtual_ || 'temas';
+            const atual = window._centralConfigTabAtual_ || 'geral';
             const abas = CENTRAL_CONFIG_GRUPOS_.map(function(g){
                 const itens = g.abas.map(function(t){
                     const ativo = t.key === atual;
@@ -15461,27 +15509,90 @@
                     '</div>';
             }).join('');
             let conteudo = '';
-            if(atual === 'temas') {
+            if(atual === 'geral') {
+                const dados = _dadosUsuarioLogado_ || {};
+                const nomeEmpresaConta = localStorage.getItem('mhub_empresa_nome') || dados.nomeEmpresa || '(desconhecida)';
+                let emailConta = '(desconhecido)';
+                try { emailConta = (typeof firebase !== 'undefined' && firebase.auth().currentUser && firebase.auth().currentUser.email) || '(desconhecido)'; } catch(e) {}
+                const cadastradoEm = dados.criadoEm ? fmtDate(dados.criadoEm) : '(desconhecida)';
+                const semPrazo = !dados.licencaDias || Number(dados.licencaDias) === 0;
+                const licencaTxt = semPrazo ? 'Sem prazo (não expira)' : (_licencaVencimentoTexto_(dados) ? ('Vence em ' + _licencaVencimentoTexto_(dados)) : 'Ativa');
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Informações da Conta</div>'+
+                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:22px; max-width:520px;">'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Empresa</div><div style="font-size:13px; font-weight:600;">'+esc(nomeEmpresaConta)+'</div></div>'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">E-mail</div><div style="font-size:13px; font-weight:600;">'+esc(emailConta)+'</div></div>'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Cadastrado em</div><div style="font-size:13px; font-weight:600;">'+esc(cadastradoEm)+'</div></div>'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Licença de uso</div><div style="font-size:13px; font-weight:600;">'+esc(licencaTxt)+'</div></div>'+
+                    '</div>'+
+                    '<div style="font-size:14px; font-weight:700; margin-bottom:10px; padding-top:16px; border-top:1px solid var(--border-color);">Preferências Gerais</div>'+
+                    '<div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">O Aranuz hoje é 100% em português do Brasil — os campos abaixo são informativos (o app ainda não tem outros idiomas/moedas/fusos pra escolher). Se isso virar um pedido real no futuro, me avise que discutimos o tamanho desse projeto à parte.</div>'+
+                    '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; max-width:520px;">'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Idioma</div><div style="font-size:13px;">Português (Brasil)</div></div>'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Fuso horário</div><div style="font-size:13px;">Horário de Brasília (UTC-3)</div></div>'+
+                    '<div><div style="font-size:11px; color:var(--text-secondary);">Formato de data</div><div style="font-size:13px;">dd/mm/aaaa</div></div>'+
+                    '</div>';
+            } else if(atual === 'aparencia') {
                 const temaAtual = document.documentElement.getAttribute('data-theme') || 'light';
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">🎨 Tema do App</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Escolha entre o modo claro e o modo escuro — a preferência fica salva neste dispositivo.</div>'+
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Tema do App</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Escolha entre o modo claro e o modo escuro — a preferência fica salva neste dispositivo. O app sempre abre no claro por padrão (ver V3.33); esta escolha manual continua valendo até você trocar de novo.</div>'+
                     '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; border:1px solid var(--border-color); border-radius:10px; max-width:340px;">'+
-                    '<span style="font-size:13px;">'+(temaAtual==='dark'?'🌙 Modo Escuro':'☀️ Modo Claro')+'</span>'+
-                    '<button type="button" onclick="toggleTheme(); _centralConfigIrPara_(\'temas\');" style="width:44px; height:24px; border-radius:12px; border:none; cursor:pointer; position:relative; background:'+(temaAtual==='dark'?'var(--accent-primary)':'#ccc')+'; transition:background .2s;">'+
+                    '<span style="font-size:13px;">'+(temaAtual==='dark'?'Modo Escuro':'Modo Claro')+'</span>'+
+                    '<button type="button" onclick="toggleTheme(); _centralConfigIrPara_(\'aparencia\');" style="width:44px; height:24px; border-radius:12px; border:none; cursor:pointer; position:relative; background:'+(temaAtual==='dark'?'var(--accent-primary)':'#ccc')+'; transition:background .2s;">'+
                     '<span style="position:absolute; top:2px; left:'+(temaAtual==='dark'?'22px':'2px')+'; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.3);"></span>'+
                     '</button></div>';
+            } else if(atual === 'segurancaAcesso') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Segurança de Acesso</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Cada navegador/aparelho ganha um identificador próprio na primeira vez que loga nesta conta.</div>'+
+                    '<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:14px;"><input type="checkbox" class="chk-toggle-claude" id="settAvisoLoginNovoDispositivo" onchange="toggleAvisoLoginNovoDispositivo(this.checked)"> Avisar por e-mail quando um dispositivo/navegador novo fizer login na minha conta</label>'+
+                    '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirLoginsRecentesModal_()">Ver meus logins recentes</button>';
+            } else if(atual === 'aprovacaoOrcamento') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Aprovação de Orçamentos Altos</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Propostas/orçamentos acima do valor limite ganham uma etapa extra: "Aguardando Aprovação Superior".</div>'+
+                    '<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:10px;"><input type="checkbox" class="chk-toggle-claude" id="settAprovacaoOrcamentoAltoAtiva" onchange="toggleAprovacaoOrcamentoAlto(this.checked)"> Exigir aprovação extra para orçamentos acima de um valor</label>'+
+                    '<div class="input-block" style="margin:0; max-width:220px;"><label style="font-size:11px;">Valor limite (R$)</label><input type="text" inputmode="decimal" class="input-element" id="settAprovacaoOrcamentoAltoLimite" placeholder="Ex: 50000" onchange="salvarAprovacaoOrcamentoAltoLimite_(this.value)"></div>';
+            } else if(atual === 'lixeira') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Itens Excluídos (Lixeira)</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Registros excluídos (leads, clientes, projetos, fornecedores, funcionários, orçamentos, financeiro e contratos) ficam guardados aqui antes de sumir de vez.</div>'+
+                    '<div class="input-block" style="margin:0 0 14px; max-width:220px;"><label style="font-size:11px;">Manter por (dias)</label><input type="number" min="1" class="input-element" id="settLixeiraRetencaoDias" onchange="salvarLixeiraRetencaoDias_(this.value)"></div>'+
+                    '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirLixeiraModal_()">Ver Itens Excluídos</button>';
+            } else if(atual === 'checklistSaude') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Checklist de Saúde do App</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Roda sozinho a cada carregamento do app e avisa no sino se algo estiver quebrado. Clique abaixo pra rodar uma verificação manual agora.</div>'+
+                    '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirChecklistSaudeModal_()">Rodar Verificação Agora</button>';
             } else if(atual === 'empresa') {
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">🏢 Configurações da Empresa</div>'+
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Produtora/Empresa</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Razão social, CNPJ, representante legal, dados bancários, impostos padrão, links de formulários públicos e Alertas Proativos.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — a migração pra cá é a próxima sub-rodada (3B).</div>'+
                     '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); openSettingsModal();">Abrir Configurações da Empresa</button>';
-            } else if(atual === 'app') {
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">⚙ Configurações do App</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Links da planilha, Drive, NFSe, cobrança, Agenda, chaves de API do Radar de Leads e busca de LinkedIn.</div>'+
+            } else if(atual === 'integracao') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Integração</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Links da planilha, Drive, NFSe, cobrança, Agenda, chaves de API do Radar de Leads e busca de LinkedIn, além da Integração com Firestore.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3C.</div>'+
                     '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); openAppConfigModal();">Abrir Configurações do App</button>';
-            } else if(atual === 'avancadas') {
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">🛠️ Configurações Avançadas</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Alertas automáticos, etapas e categorias, backup, checklist de saúde, lixeira, importação em massa, segurança de acesso e a Zona de Risco.</div>'+
+            } else if(atual === 'importExportBackup') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Importação, Exportação e Backups</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático e Exportação Automática.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3D (inclui o reagrupamento em linhas pedido).</div>'+
                     '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+            } else if(atual === 'alertas') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Alertas</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Alertas Automáticos do Sistema, Alertas Personalizáveis e E-mails e Alertas.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração + correção dos toggles e divisórias planejada pra sub-rodada 3E.</div>'+
+                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+            } else if(atual === 'personalizacao') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Personalização</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Etapas e Categorias, Menus e Seções (Barra Lateral) e Contratos.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3F.</div>'+
+                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+            } else if(atual === 'avancado') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Avançado</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">LGPD — Dados de um Titular, Sincronização e Restaurar Configurações de Fábrica.</div>'+
+                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3G.</div>'+
+                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+            } else if(atual === 'manual') {
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Manual de Uso do Aranuz</div>'+
+                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Guia completo de cada tela e recurso do app.</div>'+
+                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'manual-uso\');">Abrir Manual de Uso</button>';
             } else if(atual === 'atalhos') {
                 const linhas = [
                     ['Ctrl/Cmd + K', 'Busca rápida (leads, clientes, projetos, fornecedores, orçamentos, contratos, equipamentos)'],
@@ -15490,14 +15601,14 @@
                     ['Enter', 'Na tela de login, avança do e-mail para a senha e confirma o acesso'],
                     ['?', 'Abrir/fechar a folha de atalhos']
                 ];
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">⌨️ Atalhos de Teclado</div>'+
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Atalhos de Teclado</div>'+
                     '<div style="display:flex; flex-direction:column; gap:10px;">'+
                     linhas.map(function(l){ return '<div style="display:flex; align-items:center; gap:14px;"><span style="font-family:monospace; font-size:12px; background:var(--bg-main); border:1px solid var(--border-color); border-radius:4px; padding:4px 8px; min-width:110px; text-align:center; flex-shrink:0;">'+esc(l[0])+'</span><span style="font-size:13px; color:var(--text-secondary);">'+esc(l[1])+'</span></div>'; }).join('')+
                     '</div>';
             } else if(atual === 'novidades') {
-                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:6px;">🆕 Novidades do Aranuz</div>'+
+                conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:6px;">Novidades do Aranuz</div>'+
                     '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:16px;">Histórico a partir da versão 3.17 — versões anteriores não foram reconstruídas retroativamente.</div>'+
-                    '<div style="max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">'+
+                    '<div style="display:flex; flex-direction:column; gap:16px;">'+
                     CHANGELOG_APP.map(function(v){
                         return '<div><div style="font-weight:700; font-size:13px; margin-bottom:6px;">Versão '+esc(v.versao)+' <span style="font-weight:400; color:var(--text-secondary); font-size:11px;">— '+esc(v.data)+'</span></div>'+
                             '<ul style="margin:0 0 0 18px; padding:0; font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px;">'+
@@ -15506,12 +15617,15 @@
                     }).join('')+
                     '</div>';
             }
-            return '<div class="modal-header-title" style="margin-bottom:16px;">🗂️ Central de Configurações</div>'+
-                '<div style="display:flex; gap:20px; align-items:flex-start;">'+
-                '<div style="display:flex; flex-direction:column; gap:4px; min-width:190px; flex-shrink:0; border-right:1px solid var(--border-color); padding-right:16px;">'+abas+'</div>'+
-                '<div style="flex:1; min-width:0;">'+conteudo+'</div>'+
+            return '<div class="modal-header-title" style="margin-bottom:16px; flex-shrink:0;">Central de Configurações</div>'+
+                '<div class="cc-body">'+
+                '<div class="cc-sidebar" style="display:flex; flex-direction:column; min-width:210px; flex-shrink:0; border-right:1px solid var(--border-color); padding-right:16px;">'+abas+'</div>'+
+                '<div class="cc-content">'+conteudo+'</div>'+
                 '</div>'+
-                '<div class="modal-buttons-row" style="margin-top:20px;"><button class="btn-secondary" onclick="closeGenericModal(\'modalCentralConfigOverlay\')">Fechar</button></div>';
+                '<div style="flex-shrink:0; border-top:1px solid var(--border-color); margin-top:8px;">'+_ccRodapeSincronizacao_()+
+                '<div style="text-align:center; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:8px; padding-bottom:4px;">Aranuz · versão '+esc(FRONTEND_VERSION)+' · © '+new Date().getFullYear()+'</div>'+
+                '</div>'+
+                '<div class="modal-buttons-row" style="margin-top:10px; flex-shrink:0;"><button class="btn-secondary" onclick="closeGenericModal(\'modalCentralConfigOverlay\')">Fechar</button></div>';
         }
 
         function abrirChangelogModal() {
@@ -16224,38 +16338,16 @@
                             </div>
                         </div>
 
-                        <!-- V3.25 — Bloco 7: card novo — Segurança de Acesso (aviso de login em
-                             dispositivo novo, nasce desligado, + lista dos últimos logins de cada
-                             usuário, puxada ao vivo do Firestore quando o card é aberto). -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">🔐 Segurança de Acesso</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('segurancaAcesso')">${ICON_AJUDA_SVG_14}</button></div>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:12px;"><input type="checkbox" class="chk-toggle-claude" id="settAvisoLoginNovoDispositivo" onchange="toggleAvisoLoginNovoDispositivo(this.checked)"> Avisar por e-mail quando um dispositivo/navegador novo fizer login na minha conta</label>
-                            <button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirLoginsRecentesModal_()">Ver meus logins recentes</button>
-                        </div>
-
-                        <!-- V3.27 — Bloco 10: card novo — Lixeira (soft delete). -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">🗑️ Itens Excluídos (Lixeira)</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('lixeira')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div class="input-block" style="margin:0 0 12px; max-width:200px;"><label style="font-size:11px;">Manter por (dias)</label><input type="number" min="1" class="input-element" id="settLixeiraRetencaoDias" onchange="salvarLixeiraRetencaoDias_(this.value)"></div>
-                            <button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirLixeiraModal_()">Ver Itens Excluídos</button>
-                        </div>
-
-                        <!-- V3.27 — Bloco 11: card novo — Checklist de Saúde do App. -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">🩺 Checklist de Saúde do App</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('checklistSaude')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Roda sozinho a cada carregamento e avisa no sino se algo estiver quebrado.</div>
-                            <button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirChecklistSaudeModal_()">Rodar Verificação Agora</button>
-                        </div>
+                        <!-- V3.35 — 13/07/2026 (Rodada 3A): os 4 cartões que existiam aqui (Segurança de
+                             Acesso, Itens Excluídos/Lixeira, Checklist de Saúde do App, Aprovação de
+                             Orçamentos Altos) foram MOVIDOS pra suas próprias abas na Central de
+                             Configurações (ver CENTRAL_CONFIG_GRUPOS_ e os blocos "atual===" em
+                             _renderCentralConfig_()) — não removidos, só não vivem mais duplicados aqui.
+                             popularCamposConfigAvancada() continua com guardas if(el) pra esses IDs, sem
+                             erro, mesmo não existindo mais nesta página. -->
 
                         <!-- V3.17 — Bloco 4: card novo — Campos Personalizados por Empresa. Cada empresa
                              define suas próprias colunas extras pra Leads, Clientes e Projetos. -->
-                        <!-- V3.17 — Bloco 4: card novo — Aprovação em Etapas para Orçamentos Altos. -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Aprovação de Orçamentos Altos</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('aprovacaoOrcamentoAlto')">${ICON_AJUDA_SVG_14}</button></div>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; margin-bottom:10px;"><input type="checkbox" class="chk-toggle-claude" id="settAprovacaoOrcamentoAltoAtiva" onchange="toggleAprovacaoOrcamentoAlto(this.checked)"> Exigir aprovação extra para orçamentos acima de um valor</label>
-                            <div class="input-block" style="margin:0; max-width:200px;"><label style="font-size:11px;">Valor limite (R$)</label><input type="text" inputmode="decimal" class="input-element" id="settAprovacaoOrcamentoAltoLimite" placeholder="Ex: 50000" onchange="salvarAprovacaoOrcamentoAltoLimite_(this.value)"></div>
-                        </div>
-
                         <!-- V3.20 -- Bloco 5 (LGPD): card novo -- buscar um titular de dados (cliente, lead ou
                              fornecedor) por nome ou e-mail, exportar tudo que estiver vinculado a ele num
                              arquivo .json, ou apagar definitivamente os dados pessoais dele. Quando ha
