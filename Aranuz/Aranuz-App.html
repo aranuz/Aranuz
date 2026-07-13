@@ -197,6 +197,12 @@
            antes de configurar a URL da API). Agora existe um terceiro estado neutro (cinza), só pra esse
            caso "ainda não verificado" — só fica verde depois de uma confirmação de verdade. */
         .sync-nunca { background-color: var(--text-muted); box-shadow: none; }
+        /* V3.46 — 13/07/2026 (Rodada 5, item 13): estado novo — a REDE está ok (envio/leitura funcionaram),
+           mas a comparação real por coleção (_compararFontesDados_(), rodando sozinha a cada 15min) achou
+           contagens diferentes entre Firestore e a Planilha. Sem animação de pulso de propósito, pra não
+           parecer uma falha de conexão (que é o que ".sync-offline" já representa) — é só um aviso de
+           "os dados podem estar diferentes", não "a sincronização parou". */
+        .sync-divergente { background-color: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
         .import-btn-wrapper { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; transition: var(--transition); }
@@ -3444,7 +3450,14 @@
         // mesmo azul usado em todo o resto do app para estado ativo/selecionado); a mesma variável também
         // corrigia o toggle "chk-toggle-claude" LIGADO e o botão de tema claro/escuro quando escuro, que
         // sofriam do mesmo problema.
-        const FRONTEND_VERSION = '3.45';
+        // V3.46 — 13/07/2026 (Rodada 5, item 13): status "sincronizado" da Planilha agora reflete uma
+        // comparação REAL, não só "a rede respondeu" — a cada 15 minutos (escolha do cliente), o app
+        // compara de verdade Firestore x Planilha coleção por coleção (reaproveitando a ferramenta
+        // "Comparar Sheets × Firestore" já existente no Painel de Diagnóstico, agora também chamada
+        // sozinha em segundo plano). Se alguma coleção divergir, a bolinha da Planilha vira âmbar (estado
+        // novo "divergente", sem piscar — diferente do amarelo de "sem conexão") e um aviso aparece no
+        // sino, em vez de continuar mostrando verde só porque o último envio/leitura funcionou.
+        const FRONTEND_VERSION = '3.46';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -5078,6 +5091,12 @@
             // sincronizar) e se repete a cada 1h enquanto a aba ficar aberta.
             verificarSyncOfflineLongo();
             setInterval(verificarSyncOfflineLongo, 60*60*1000);
+            // V3.46 — 13/07/2026 (Rodada 5, item 13): comparação real Firestore x Planilha, silenciosa,
+            // a cada 15 minutos enquanto a aba ficar aberta (intervalo escolhido pelo cliente). Roda uma
+            // vez já no carregamento (depois do 1º syncWithCloud() acima, pra já ter dado tempo do
+            // Firestore conectar) e se repete sozinha depois disso.
+            _verificarDivergenciaFontesPeriodica_();
+            setInterval(_verificarDivergenciaFontesPeriodica_, 15*60*1000);
             // V34: Sincronização automática (polling) removida a pedido do usuário.
             // A busca por novos dados na planilha agora só acontece quando o usuário
             // clica no botão de sincronizar (ver btnSync / importarManual()).
@@ -5471,6 +5490,35 @@
                 '<div class="modal-buttons-row"><button class="btn-primary" onclick="closeGenericModal(\'modalComparacaoFontesOverlay\')">Fechar</button></div>';
             openGenericModal('modalComparacaoFontesOverlay', html, true);
         }
+        // V3.46 — 13/07/2026 (Rodada 5, item 13): versão "silenciosa" da comparação acima — reaproveita
+        // 100% de _compararFontesDados_() (mesma função usada pelo botão manual do Painel de Diagnóstico),
+        // só que sem abrir nenhum modal, rodando sozinha em segundo plano a cada 15 minutos (ver chamada
+        // de setInterval no bloco de inicialização). Guarda o resultado em localStorage
+        // (mhub_comparacao_status/mhub_comparacao_ts) e updateSyncUI() lê essa chave pra decidir se a
+        // bolinha de status da Planilha continua verde ("online") ou vira âmbar ("divergente") — é isso
+        // que resolve o pedido do cliente: "sincronizado" deixa de significar só "a rede respondeu" e
+        // passa a significar "a rede respondeu E os dados batem de verdade", sem precisar abrir nada.
+        async function _verificarDivergenciaFontesPeriodica_() {
+            if (!getSheetsUrl()) return; // sem planilha configurada — nada a comparar, Firestore já é a fonte de verdade sozinho
+            if (!fbDb || !fbPilotoPronto) return; // Firestore ainda não confirmou conexão nesta sessão — tenta de novo no próximo ciclo
+            try {
+                const resultado = await _compararFontesDados_();
+                const divergentes = resultado.filter(function(r){ return r.divergente; });
+                localStorage.setItem('mhub_comparacao_ts', String(Date.now()));
+                if (divergentes.length) {
+                    localStorage.setItem('mhub_comparacao_status', 'divergente');
+                    // key com granularidade de 6h — evita reenviar a mesma notificação a cada 15min enquanto a divergência persistir
+                    addNotif('⚠️ ' + divergentes.length + ' coleção(ões) com contagem diferente entre o Firestore e a Planilha — veja em Painel de Diagnóstico > Comparar Sheets × Firestore.', 'warn', 'comparacao-divergente-' + Math.floor(Date.now()/(1000*60*60*6)));
+                } else {
+                    localStorage.setItem('mhub_comparacao_status', 'ok');
+                }
+            } catch(e) {
+                // falha ao comparar (ex: planilha instável no momento) não deve acender "divergente" à toa —
+                // simplesmente não atualiza o status desta rodada, tenta de novo no próximo ciclo de 15min.
+                console.error('[Aranuz] Falha na comparação periódica Sheets × Firestore:', e);
+            }
+            updateSyncUI();
+        }
         // ====== V3.26 — Bloco 8: Checklist de Saúde do Sistema (dentro do Painel de Diagnóstico) ======
         // Cada item é uma checagem local e instantânea (nada de rede) — pensado pra dar um raio-x rápido
         // de "está tudo funcionando?" sem precisar entender os detalhes técnicos por trás.
@@ -5525,6 +5573,13 @@
             const lastSync = localStorage.getItem('mang_last_sync_ts');
             const lastSyncTxt = lastSync ? new Date(Number(lastSync)).toLocaleString('pt-BR') : 'nunca';
             const status = localStorage.getItem('mang_sync_status') || 'desconhecido';
+            // V3.46 — 13/07/2026 (Rodada 5, item 13): status da última comparação REAL (não só "a rede
+            // respondeu") — rodada sozinha em segundo plano a cada 15min, ver _verificarDivergenciaFontesPeriodica_().
+            const statusComparacao = localStorage.getItem('mhub_comparacao_status');
+            const tsComparacao = localStorage.getItem('mhub_comparacao_ts');
+            const comparacaoTxt = !statusComparacao ? 'ainda não rodou nesta sessão'
+                : (statusComparacao === 'ok' ? '✅ dados batem' : (statusComparacao === 'divergente' ? '⚠️ divergência encontrada' : statusComparacao))
+                  + (tsComparacao ? ' (' + new Date(Number(tsComparacao)).toLocaleString('pt-BR') + ')' : '');
             // V3.17 — item 6 da lista de robustez de dados: lista ampliada pra cobrir TODAS as coleções
             // que de fato sincronizam com o Firestore (antes só mostrava 14 das ~29/32), gerada a partir
             // de MIGRACAO_FASE1_COLECOES (mesma fonte usada pelo espelhamento e pela leitura em
@@ -5545,6 +5600,7 @@
                 '<div><div style="font-size:10px; text-transform:uppercase; color:var(--text-muted);">Status da Sincronização</div><div style="font-weight:700;">'+esc(status)+'</div></div>'+
                 '<div><div style="font-size:10px; text-transform:uppercase; color:var(--text-muted);">Última Sincronização</div><div style="font-weight:700;">'+lastSyncTxt+'</div></div>'+
                 '<div><div style="font-size:10px; text-transform:uppercase; color:var(--text-muted);">Empresa (Firebase)</div><div style="font-weight:700;">'+esc(FB_EMPRESA_ID||'—')+'</div></div>'+
+                '<div><div style="font-size:10px; text-transform:uppercase; color:var(--text-muted);">Última Comparação Real (Firestore × Planilha)</div><div style="font-weight:700;">'+esc(comparacaoTxt)+'</div></div>'+
                 '</div>'+
                 '<div class="form-section-title" style="font-size:13px;">✅ Saúde do Sistema</div>'+
                 '<div style="margin-bottom:16px;">'+_renderSaudeSistemaHtml_()+'</div>'+
@@ -6105,7 +6161,21 @@
             if(!dot) return;
             if(status === 'syncing') { dot.className = 'sync-dot sync-syncing'; dot.title = 'Sincronizando...'; }
             else if(status === 'offline') { dot.className = 'sync-dot sync-offline'; dot.title = 'Sync Pendente — sem conexão com a planilha (confira a URL da API em Configurações do App)'; }
-            else if(status === 'online') { dot.className = 'sync-dot sync-online'; dot.title = 'Sincronizado com a planilha do Google Sheets'; }
+            else if(status === 'online') {
+                // V3.46 — 13/07/2026 (Rodada 5, item 13): "online" antes só significava "o envio/leitura
+                // funcionou" — nunca confirmava se os dados de fato batiam com o Firestore. Agora, se a
+                // comparação real periódica (_verificarDivergenciaFontesPeriodica_(), a cada 15min) achou
+                // alguma coleção divergente, a bolinha fica âmbar (sem pulsar, pra não parecer queda de
+                // conexão) em vez de verde — evita mostrar "sincronizado" com a planilha desatualizada/com lixo.
+                const statusComparacao = localStorage.getItem('mhub_comparacao_status');
+                if(statusComparacao === 'divergente') {
+                    dot.className = 'sync-dot sync-divergente';
+                    dot.title = 'Conectado, mas a comparação encontrou diferenças entre o Firestore e a Planilha — veja em Painel de Diagnóstico > Comparar Sheets × Firestore.';
+                } else {
+                    dot.className = 'sync-dot sync-online';
+                    dot.title = 'Sincronizado com a planilha do Google Sheets' + (statusComparacao === 'ok' ? ' — última comparação real confirmou que os dados batem.' : '');
+                }
+            }
             // V3.10: 'naoconfigurado' é diferente de 'offline' — não é uma falha, é uma escolha (planilha
             // é opcional). Fica com a mesma cor neutra de "nunca sincronizou", só com um texto mais claro.
             else if(status === 'naoconfigurado') { dot.className = 'sync-dot sync-nunca'; dot.title = 'Planilha do Google Sheets não configurada (opcional — o app funciona normalmente no Firestore sem ela)'; }
@@ -9110,7 +9180,8 @@
                 <p>Se algo excluído direto na planilha continuar aparecendo no app, use <em>Forçar Sincronização</em> em Configurações do App.</p>
                 <p>O Histórico (registro de todas as alterações) tem um limite de linhas na planilha — quando enche, as entradas mais antigas são movidas automaticamente para uma aba extra ("Histórico - Arquivo 1", "2"...), sem perder nada, só liberando espaço na aba principal.</p>
                 <p>Se a conexão cair, o sino do topo avisa que o app está "offline" — os dados continuam salvos neste dispositivo e sincronizam assim que a conexão voltar.</p>
-                <p>Clicar 3 vezes seguidas em cima da versão do app (desde a V3.45, na barra de menus, ao lado do nome da empresa logada e das bolinhas de sincronização) abre um <strong>Painel de Diagnóstico</strong> — mostra versão do app, versão da planilha, status e hora da última sincronização, e quantos registros existem em cada coleção (útil pra bater com a planilha visualmente quando algo parece "faltando").</p>` } ,
+                <p>Clicar 3 vezes seguidas em cima da versão do app (desde a V3.45, na barra de menus, ao lado do nome da empresa logada e das bolinhas de sincronização) abre um <strong>Painel de Diagnóstico</strong> — mostra versão do app, versão da planilha, status e hora da última sincronização, e quantos registros existem em cada coleção (útil pra bater com a planilha visualmente quando algo parece "faltando").</p>
+                <p><strong>A bolinha da Planilha ficou amarela, mas sem parecer "offline"?</strong> Desde a V3.46, a bolinha verde não significa mais só "o envio/leitura funcionou" — a cada 15 minutos o app compara de verdade, coleção por coleção, se o Firestore e a Planilha têm a mesma quantidade de registros. Se alguma bater diferente, a bolinha fica amarela (sem piscar, diferente do amarelo de "sem conexão") e um aviso aparece no sino. Abra o Painel de Diagnóstico e clique em <strong>"Comparar Sheets × Firestore"</strong> pra ver exatamente qual coleção divergiu e quais IDs faltam de cada lado.</p>` } ,
             { icone: '❓', titulo: '20. Perguntas frequentes', corpo: `
                 <p><strong>Posso usar o app pra mais de uma empresa?</strong> Sim — desde a V240/V241, isso é feito por login (cada usuário se cadastra e é aprovado com um <code>empresaId</code> específico), não mais por planilhas/deployments separados. As Regras de Segurança do Firestore garantem que uma empresa nunca acesse os dados de outra, mesmo estando no mesmo Aranuz. Ver Manual do Administrador de Usuários pra saber como aprovar/gerenciar contas.</p>
                 <p><strong>Meu login parou de funcionar, ou esqueci a senha — e agora?</strong> Fale com quem administra o Aranuz na sua empresa: ele consegue ver se sua conta está ativa ou foi desabilitada, e reprocessar seu acesso se precisar. O Aranuz em si não tem uma tela de "esqueci minha senha" própria — isso é resolvido pelo administrador.</p>
@@ -15401,6 +15472,10 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.46', data: '13/07/2026', itens: [
+                'O status "sincronizado" da Planilha agora é conferido de verdade: a cada 15 minutos, o app compara o Firestore e a Planilha coleção por coleção. Se alguma quantidade não bater, a bolinha de status fica amarela (sem piscar) em vez de continuar verde só porque o último envio/leitura funcionou — e um aviso aparece no sino.',
+                'Painel de Diagnóstico ganhou um campo novo mostrando o resultado e o horário da última comparação real entre Firestore e Planilha.'
+            ]},
             { versao: '3.45', data: '13/07/2026', itens: [
                 '"Aranuz · © 2026" saiu do topo da barra lateral e foi para o rodapé — Histórico, Exportar Dados e o acesso à Planilha (Banco de Dados) continuam disponíveis em Central de Configurações > Geral > Atalhos Rápidos.',
                 'Largura da janela de Central de Configurações dobrada, para acomodar melhor o conteúdo das abas.',
