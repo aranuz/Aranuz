@@ -925,7 +925,15 @@
                     <div style="font-size:10px; color:var(--text-secondary); margin-top:2px; margin-left:24px;">Marque quando este lead tiver um perfil/posicionamento de forte afinidade com o nosso trabalho — preenche a estrela ao lado do Score no Radar de Oportunidades e na Jornada do Lead.</div>
                 </div>
 
-                <div class="form-section-title">Contatos (Decisor & Influenciador)</div>
+                <!-- V3.44 — 13/07/2026 (Rodada 3, pedido do cliente): (1) título "Contatos (Decisor &
+                     Influenciador)" virou só "Contatos"; (2) nova linha única "Nome Atendente/Indicação" +
+                     "Telefone" logo acima dos cards de Decisor/Influenciador — é o registro do primeiro
+                     contato (geralmente quem atende e indica o decisor de verdade), o "norte" inicial. -->
+                <div class="form-section-title">Contatos</div>
+                <div class="grid-2-col" style="margin-bottom:14px;">
+                    <div class="input-block"><label>Nome Atendente/Indicação</label><input type="text" class="input-element" id="leadAtendenteNome" placeholder="Quem atendeu/indicou o contato"></div>
+                    <div class="input-block"><label>Telefone</label><input type="text" class="input-element" id="leadAtendenteTelefone" placeholder="Telefone / WhatsApp"></div>
+                </div>
                 <div class="grid-2-col">
                     <div class="contact-block">
                         <label style="color:var(--accent-amber);">Decisor Final</label>
@@ -948,6 +956,16 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- V3.44 — 13/07/2026 (Rodada 3, pedido do cliente): "+ Contatos" — lista livre de
+                     contatos adicionais (nome, função, telefone, e-mail), além do Decisor/Influenciador.
+                     Cada linha é editável/removível na hora; salvos em l.contatosAdicionais (Firebase +
+                     planilha) junto com o resto do lead — ver renderLeadContatosAdicionais_()/coletarLeadContatosAdicionais_(). -->
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; margin-bottom:8px;">
+                    <div class="form-section-title" style="margin:0;">Outros Contatos</div>
+                    <button type="button" class="btn-secondary" style="padding:5px 12px; font-size:12px;" onclick="adicionarLeadContatoAdicional_()">+ Contato</button>
+                </div>
+                <div id="leadContatosAdicionaisArea"></div>
 
                 <div class="form-section-title">Histórico de Propostas</div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:flex-end;">
@@ -3376,7 +3394,17 @@
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.43';
+        // V3.44 — 13/07/2026 (Rodada 3, Itens do Perfil do Lead): nova etapa fixa "Contato Atendimento"
+        // (id 13) no funil, logo após "No Radar" e antes de "Abordado" — sem data automática de próxima
+        // ação; migração automática insere a etapa em contas com crmStages customizado (uma única vez).
+        // Seção "Contatos (Decisor & Influenciador)" renomeada para só "Contatos". Adicionados campos
+        // "Nome Atendente/Indicação" e "Telefone" (primeiro contato, acima dos cards de Decisor/
+        // Influenciador) e a lista "+ Contatos" (Outros Contatos: nome/função/telefone/email, linhas
+        // dinâmicas, adicionar/remover) — tudo persistido em l.atendenteNome/l.atendenteTelefone/
+        // l.contatosAdicionais, sincronizado com Firebase e Planilha (ver GS V3.44).
+        // Regras de segurança do Firestore: leitura/criação de 'alertasEmailEnviados' agora exige que o
+        // empresaId do documento pertença à empresa do usuário autenticado (evita exposição entre contas).
+        const FRONTEND_VERSION = '3.44';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -4373,8 +4401,15 @@
         // "No Radar" (id 0, sempre primeira) e das 3 etapas terminais — Conquistados/Perdidos/Sem
         // Resposta, ids 9/10/11, sempre últimas nessa ordem — é fixa; e essas 4 não podem ser excluídas
         // (só as etapas "do meio" podem, e só se nenhum lead estiver nelas no momento).
+        // V3.44 — 13/07/2026 (Rodada 3, pedido do cliente): nova etapa "Contato Atendimento" (id 13),
+        // sempre logo depois de "No Radar" e antes de "Abordado" — registra o primeiro contato (em geral
+        // com quem atende/recepciona), de quem sai a indicação de quem realmente será abordado. Mesmo
+        // padrão da V80 ("Ligação/Reunião Diagnóstico"): etapa NOVA com id próprio, nenhuma migração de
+        // dado precisa (leads existentes continuam com o "stage" que já tinham). Ver
+        // CRM_STAGE_ID_ATENDIMENTO abaixo — tratada como posição fixa (igual "No Radar"), então nunca
+        // ganha o campo "dias até próxima ação automática" (pedido explícito do cliente: sem isso aqui).
         const CRM_STAGES_PADRAO = [
-            { id: 0, name: "No Radar" }, { id: 1, name: "Abordado" },
+            { id: 0, name: "No Radar" }, { id: 13, name: "Contato Atendimento" }, { id: 1, name: "Abordado" },
             { id: 2, name: "Follow-up 1" }, { id: 3, name: "Follow-up 2" },
             { id: 4, name: "Follow-up 3" }, { id: 12, name: "Ligação/Reunião Diagnóstico" },
             { id: 5, name: "Proposta Enviada" },
@@ -4382,6 +4417,7 @@
             { id: 9, name: "Conquistados" }, { id: 10, name: "Perdidos" }, { id: 11, name: "Sem Resposta" }
         ];
         const CRM_STAGE_FIXA_INICIO = 0; // "No Radar" sempre primeira etapa
+        const CRM_STAGE_ID_ATENDIMENTO = 13; // "Contato Atendimento" — V3.44 — sempre logo após "No Radar", sem follow-up automático
         const CRM_STAGES_FIXAS_FIM = [9, 10, 11]; // Conquistados/Perdidos/Sem Resposta sempre últimas, nessa ordem
         let crmStages = CRM_STAGES_PADRAO.slice();
         // V80: "Ligação/Reunião Diagnóstico" volta ao funil (contato antes de enviar/apresentar a proposta).
@@ -4712,6 +4748,20 @@
                     if(Array.isArray(lista) && lista.length && lista.every(function(s){ return s && typeof s.id === 'number' && typeof s.name === 'string' && s.name.trim(); })) crmStages = lista;
                 }
             } catch(e) { console.error('[Aranuz] Config de Etapas do Funil inválida, mantendo padrão.', e); }
+            // V3.44 — 13/07/2026 (Rodada 3): migração única — contas que JÁ tinham etapas do funil
+            // personalizadas (crmStagesCustom salvo) nunca ganhariam a nova etapa "Contato Atendimento"
+            // sozinhas, porque a linha acima SUBSTITUI crmStages inteiro pelo que já estava salvo. Insere
+            // a etapa nova logo após "No Radar" se ainda não existir, e persiste — roda só uma vez por
+            // conta (depois disso a etapa já existe no array salvo, então este "if" nunca mais entra).
+            try {
+                if(!crmStages.some(function(s){ return s.id === CRM_STAGE_ID_ATENDIMENTO; })) {
+                    const idx0 = crmStages.findIndex(function(s){ return s.id === CRM_STAGE_FIXA_INICIO; });
+                    const novaEtapaAtendimento = { id: CRM_STAGE_ID_ATENDIMENTO, name: "Contato Atendimento" };
+                    if(idx0 >= 0) crmStages.splice(idx0 + 1, 0, novaEtapaAtendimento); else crmStages.unshift(novaEtapaAtendimento);
+                    setLink('crmStagesCustom', JSON.stringify(crmStages));
+                    saveDb();
+                }
+            } catch(e) { console.error('[Aranuz] Falha ao inserir a etapa "Contato Atendimento" no funil.', e); }
             try {
                 const raw = getLink('crmStageScheduleCustom');
                 if(raw) {
@@ -13444,6 +13494,50 @@
             return (window._tagsWidgetState_[containerId] || []).slice();
         }
 
+        // V3.44 — 13/07/2026 (Rodada 3): "+ Contatos" no Perfil do Lead. Lista dinâmica de contatos
+        // adicionais (nome, função, telefone, email) além do Decisor/Influenciador — mesmo padrão de
+        // estado-em-memória do widget de Tags acima (window._leadContatosAdicState_), coletado só na
+        // hora de salvar via coletarLeadContatosAdicionais_() dentro de saveLead().
+        window._leadContatosAdicState_ = [];
+        function renderLeadContatosAdicionais_(contatosAtuais) {
+            window._leadContatosAdicState_ = Array.isArray(contatosAtuais) ? contatosAtuais.map(function(c){ return { nome: c.nome||'', funcao: c.funcao||'', telefone: c.telefone||'', email: c.email||'' }; }) : [];
+            const area = document.getElementById('leadContatosAdicionaisArea');
+            if(area) area.innerHTML = _renderLeadContatosAdicionaisInner_();
+            return '';
+        }
+        function _renderLeadContatosAdicionaisInner_() {
+            const lista = window._leadContatosAdicState_ || [];
+            if(!lista.length) return '<div style="font-size:12px; color:var(--text-secondary); padding:4px 0;">Nenhum contato adicional.</div>';
+            return lista.map(function(c, i){
+                return '<div class="grid-inputs" style="grid-template-columns: 2fr 2fr 2fr 2fr auto; align-items:center; margin-bottom:6px;">' +
+                    '<div class="input-block"><input type="text" class="input-element" placeholder="Nome" value="'+esc(c.nome)+'" onchange="_atualizarLeadContatoAdicional_('+i+',\'nome\',this.value)"></div>' +
+                    '<div class="input-block"><input type="text" class="input-element" placeholder="Função" value="'+esc(c.funcao)+'" onchange="_atualizarLeadContatoAdicional_('+i+',\'funcao\',this.value)"></div>' +
+                    '<div class="input-block"><input type="text" class="input-element" placeholder="Telefone" value="'+esc(c.telefone)+'" onchange="_atualizarLeadContatoAdicional_('+i+',\'telefone\',this.value)"></div>' +
+                    '<div class="input-block"><input type="email" class="input-element" placeholder="E-mail" value="'+esc(c.email)+'" onchange="_atualizarLeadContatoAdicional_('+i+',\'email\',this.value)"></div>' +
+                    '<span style="cursor:pointer; color:var(--accent-red,#d33); font-weight:700; padding:0 6px;" title="Remover contato" onclick="removerLeadContatoAdicional_('+i+')">✕</span>' +
+                    '</div>';
+            }).join('');
+        }
+        function adicionarLeadContatoAdicional_() {
+            window._leadContatosAdicState_ = window._leadContatosAdicState_ || [];
+            window._leadContatosAdicState_.push({ nome:'', funcao:'', telefone:'', email:'' });
+            const area = document.getElementById('leadContatosAdicionaisArea');
+            if(area) area.innerHTML = _renderLeadContatosAdicionaisInner_();
+        }
+        function _atualizarLeadContatoAdicional_(i, campo, valor) {
+            if(!window._leadContatosAdicState_ || !window._leadContatosAdicState_[i]) return;
+            window._leadContatosAdicState_[i][campo] = valor;
+        }
+        function removerLeadContatoAdicional_(i) {
+            if(!window._leadContatosAdicState_) return;
+            window._leadContatosAdicState_.splice(i, 1);
+            const area = document.getElementById('leadContatosAdicionaisArea');
+            if(area) area.innerHTML = _renderLeadContatosAdicionaisInner_();
+        }
+        function coletarLeadContatosAdicionais_() {
+            return (window._leadContatosAdicState_ || []).filter(function(c){ return (c.nome||'').trim() || (c.telefone||'').trim() || (c.email||'').trim(); }).slice();
+        }
+
         // V3.17 — Bloco 4: Colaboração em Tempo Real (quem está vendo/editando). Presença leve via
         // Firestore — não é edição colaborativa de verdade (isso mudaria a arquitetura inteira do app),
         // é só um aviso "fulano também está aqui agora" pra evitar dois usuários editando o MESMO
@@ -13524,6 +13618,8 @@
 
                 setVal('leadDecNome', dec.nome || ''); setVal('leadDecCargo', dec.cargo || ''); setVal('leadDecTel', dec.tel || ''); setVal('leadDecEmail', dec.email || ''); setVal('leadDecLinkedin', dec.linkedin || '');
                 setVal('leadInfNome', inf.nome || ''); setVal('leadInfCargo', inf.cargo || ''); setVal('leadInfTel', inf.tel || ''); setVal('leadInfEmail', inf.email || ''); setVal('leadInfLinkedin', inf.linkedin || '');
+                setVal('leadAtendenteNome', l.atendenteNome || ''); setVal('leadAtendenteTelefone', l.atendenteTelefone || ''); // V3.44
+                renderLeadContatosAdicionais_(l.contatosAdicionais); // V3.44
 
                 if(l.history && l.history.length > 0) {
                     histArea.innerHTML = l.history.map(h => `<div class="lead-history-item"><strong>${h.date}</strong> ${h.text}</div>`).join('');
@@ -13541,7 +13637,8 @@
                 const ring = document.getElementById('modalLeadScore');
                 ring.innerText = '0'; ring.className = 'score-ring';
 
-                ['leadCompany','leadSegment','leadLocation','leadScoreManual','leadCompanyPhone','leadNextAction','leadSite','leadInstagram','leadLinkedin','leadDecNome','leadDecCargo','leadDecTel','leadDecEmail','leadDecLinkedin','leadInfNome','leadInfCargo','leadInfTel','leadInfEmail','leadInfLinkedin'].forEach(f => setVal(f, ''));
+                ['leadCompany','leadSegment','leadLocation','leadScoreManual','leadCompanyPhone','leadNextAction','leadSite','leadInstagram','leadLinkedin','leadDecNome','leadDecCargo','leadDecTel','leadDecEmail','leadDecLinkedin','leadInfNome','leadInfCargo','leadInfTel','leadInfEmail','leadInfLinkedin','leadAtendenteNome','leadAtendenteTelefone'].forEach(f => setVal(f, ''));
+                renderLeadContatosAdicionais_(null); // V3.44 — lead novo começa sem contatos adicionais
                 document.getElementById('leadAfinidade').checked = false;
                 setVal('leadStage', 0);
                 setVal('leadClientType', 'Cliente Final');
@@ -13663,6 +13760,10 @@
                 tel: document.getElementById('leadInfTel').value, email: document.getElementById('leadInfEmail').value,
                 linkedin: document.getElementById('leadInfLinkedin').value
             };
+            // V3.44 — Nome Atendente/Indicação e Telefone (primeiro contato) + lista de "Outros Contatos".
+            const atendenteNome = document.getElementById('leadAtendenteNome').value;
+            const atendenteTelefone = document.getElementById('leadAtendenteTelefone').value;
+            const contatosAdicionais = coletarLeadContatosAdicionais_();
             const companyPhone = document.getElementById('leadCompanyPhone').value;
             const site = document.getElementById('leadSite').value;
             const instagram = document.getElementById('leadInstagram').value;
@@ -13724,6 +13825,9 @@
                 l.afinidade = afinidade;
                 l.decisor = decisor;
                 l.influenciador = influenciador;
+                l.atendenteNome = atendenteNome; // V3.44
+                l.atendenteTelefone = atendenteTelefone; // V3.44
+                l.contatosAdicionais = contatosAdicionais; // V3.44
                 l.camposPersonalizados = coletarCamposPersonalizados_('leadCamposPersonalizadosContainer', 'leads');
                 l.tags = coletarTagsWidget_('leadTagsWidget');
                 if(l.origem===undefined) l.origem='app';
@@ -13754,6 +13858,7 @@
                     afinidade: afinidade,
                     score: { mkt: 0, fin: 0, align: 0, manual: scoreManualVal },
                     decisor, influenciador,
+                    atendenteNome, atendenteTelefone, contatosAdicionais, // V3.44
                     camposPersonalizados: coletarCamposPersonalizados_('leadCamposPersonalizadosContainer', 'leads'),
                     tags: coletarTagsWidget_('leadTagsWidget'),
                     history: hist, origem: 'app', updatedAt: Date.now(),
@@ -15256,6 +15361,11 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.44', data: '13/07/2026', itens: [
+                'Nova etapa do funil "Contato Atendimento", entre "No Radar" e "Abordado" — representa o primeiro contato (geralmente um atendente que indica o decisor); não gera data automática de próxima ação.',
+                'Perfil do Lead: seção "Contatos (Decisor & Influenciador)" agora se chama só "Contatos". Adicionados os campos "Nome Atendente/Indicação" e "Telefone" (primeiro contato) e a lista "+ Contatos" para registrar quantos contatos adicionais forem necessários (nome, função, telefone, e-mail) — tudo sincronizado com Firebase e Planilha.',
+                'Regras de segurança do Firestore: leitura/criação de e-mails de alerta já enviados agora é restrita à própria empresa (antes era possível ler registros de outras contas).'
+            ]},
             { versao: '3.43', data: '13/07/2026', itens: [
                 'Bugfix: "Restaurar Base a partir de um Backup" agora explica de verdade o que deu errado (em vez do erro cru "Unexpected token") quando a planilha de backup é grande demais e o Google interrompe a leitura.',
                 'Regras de segurança do Firestore revisadas: o link de Proposta Pública agora não pode mais ser listado por inteiro por terceiros (continua funcionando normalmente para quem tem o link).'
@@ -23971,13 +24081,15 @@
                 const emUso = db.projects.some(function(p){ return p.category === nome; }) || (db.orcamentos||[]).some(function(o){ return o.categoriaProjeto === nome; });
                 return _linhaEtapaGenerica('cat', idx, nome, protegida, emUso, idx>0, idx<_etapasDraft.categorias.length-1);
             }).join('');
-            // --- Etapas do Funil de Leads: primeira (No Radar) fixa, últimas 3 (terminais) fixas ---
+            // --- Etapas do Funil de Leads: primeira (No Radar) fixa, 2ª (Contato Atendimento) fixa, últimas 3 (terminais) fixas ---
             const crm = _etapasDraft.crmStages;
             const idxPrimeira = crm.findIndex(function(s){ return s.id === CRM_STAGE_FIXA_INICIO; });
-            const idxMeio = crm.map(function(s,i){ return i; }).filter(function(i){ return i !== idxPrimeira && !CRM_STAGES_FIXAS_FIM.includes(crm[i].id); });
+            const idxAtendimento = crm.findIndex(function(s){ return s.id === CRM_STAGE_ID_ATENDIMENTO; }); // V3.44
+            const idxMeio = crm.map(function(s,i){ return i; }).filter(function(i){ return i !== idxPrimeira && i !== idxAtendimento && !CRM_STAGES_FIXAS_FIM.includes(crm[i].id); });
             const idxFim = CRM_STAGES_FIXAS_FIM.map(function(id){ return crm.findIndex(function(s){ return s.id === id; }); }).filter(function(i){ return i >= 0; });
             let htmlCrm = '';
             if(idxPrimeira >= 0) htmlCrm += _linhaEtapaCrm(idxPrimeira, false, false, true);
+            if(idxAtendimento >= 0) htmlCrm += _linhaEtapaCrm(idxAtendimento, false, false, true); // V3.44 — fixa, sem follow-up
             idxMeio.forEach(function(i, pos){ htmlCrm += _linhaEtapaCrm(i, pos>0, pos<idxMeio.length-1, false); });
             idxFim.forEach(function(i){ htmlCrm += _linhaEtapaCrm(i, false, false, true); });
 
@@ -24052,7 +24164,7 @@
             _etapasDraft.crmStages.forEach(function(s, idx){
                 const v = (document.getElementById('etapaInput_crm_'+idx).value||'').trim();
                 if(v) s.name = v;
-                const fixa = (s.id === CRM_STAGE_FIXA_INICIO) || CRM_STAGES_FIXAS_FIM.includes(s.id);
+                const fixa = (s.id === CRM_STAGE_FIXA_INICIO) || (s.id === CRM_STAGE_ID_ATENDIMENTO) || CRM_STAGES_FIXAS_FIM.includes(s.id); // V3.44
                 if(!fixa) {
                     const elProxima = document.getElementById('etapaCrmProxima_'+idx);
                     const elInativo = document.getElementById('etapaCrmInativo_'+idx);

@@ -1,6 +1,11 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_43.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_44.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.44 — 13/07/2026 (Rodada 3, Itens do Perfil do Lead): MUDANÇA REAL NESTE ARQUIVO — OPP_COLS ganhou
+ * 3 colunas novas no FINAL da lista (nunca no meio, pra não quebrar dados existentes por índice):
+ * "atendente_nome", "atendente_telefone" e "contatos_adicionais" (JSON da lista "+ Contatos" do Perfil
+ * do Lead). linhaParaLead()/_leadParaLinha_() atualizadas para ler/gravar linha[42..44]. Requer nova
+ * implantação do Apps Script para a planilha ganhar as colunas novas no cabeçalho.
  * V3.43 — 13/07/2026 (Rodada 2): só pareamento — o BUGFIX de "Restaurar Base a partir de um Backup"
  * desta rodada foi só de front-end (mensagem de erro mais clara em importarBackupParaFirebase(), ver
  * App). O erro "Unexpected token '<'" em si (Google devolvendo HTML em vez de JSON quando o backup é
@@ -295,7 +300,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.43"; // V3.43 — 13/07/2026 (Rodada 2): só pareamento — ver changelog no topo do arquivo.
+var BACKEND_VERSION = "3.44"; // V3.44 — 13/07/2026 (Rodada 3): OPP_COLS +3 colunas (atendente_nome/atendente_telefone/contatos_adicionais) — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.
@@ -1168,7 +1173,11 @@ var OPP_COLS = [
   "decisor_nome","decisor_cargo","decisor_tel","decisor_email","linkedin_decisor",
   "influenciador_nome","influenciador_cargo","influenciador_tel","influenciador_email","linkedin_influenciador",
   "dores","gatilho","maturidade","pitch","historico","ultima_acao","origem","qualification","updatedAt","onboarding","dataConquista","origemCanal","stageMigradoV78",
-  "scoreManual","clienteId","campanhaId"
+  "scoreManual","clienteId","campanhaId",
+  // V3.44 — 13/07/2026 (Rodada 3): colunas novas SEMPRE no final (nunca no meio — ver nota em
+  // linhaParaLead/_leadParaLinha_ sobre índices fixos). atendente_nome/atendente_telefone = primeiro
+  // contato (Nome Atendente/Indicação + Telefone); contatos_adicionais = JSON da lista "+ Contatos".
+  "atendente_nome","atendente_telefone","contatos_adicionais"
 ];
 var CLI_COLS = [
   "id","razaoSocial","nomeFantasia","cnpj","inscricaoEstadual","telEmpresa","emailEmpresa","enderecoEmpresa",
@@ -3345,6 +3354,7 @@ function linhaParaLead(linha) {
   var history = []; try { history = JSON.parse(linha[30]); } catch (e) { if (linha[30]) history = [{ date:"", text:String(linha[30]) }]; }
   var onboarding = null; try { onboarding = linha[35] ? JSON.parse(linha[35]) : null; } catch (e) { onboarding = null; }
   var dataConquista = ymd(linha[36]);
+  var contatosAdicionais = []; try { contatosAdicionais = linha[44] ? JSON.parse(linha[44]) : []; } catch (e) { contatosAdicionais = []; }
   return {
     id: Number(linha[0]) || linha[0], dateIn: brDate(linha[1]), company: String(linha[2]||""), segment: String(linha[3]||""),
     city: String(linha[4]||""), state: String(linha[5]||"ES"), clientType: String(linha[6]||"Cliente Final"),
@@ -3362,7 +3372,11 @@ function linhaParaLead(linha) {
     origemCanal: String(linha[37]||""),
     stageMigradoV78: String(linha[38]) === "true",
     clienteId: String(linha[40]||""),
-    campanhaId: String(linha[41]||"")
+    campanhaId: String(linha[41]||""),
+    // V3.44 — Nome Atendente/Indicação, Telefone (primeiro contato) e lista "+ Contatos".
+    atendenteNome: String(linha[42]||""),
+    atendenteTelefone: String(linha[43]||""),
+    contatosAdicionais: contatosAdicionais
   };
 }
 
@@ -3395,7 +3409,8 @@ function _leadParaLinha_(l) {
     inf.nome||"", inf.cargo||"", inf.tel||"", inf.email||"", inf.linkedin||"",
     l.dores||"", l.gatilho||"", l.maturidade||"", l.pitch||"", JSON.stringify(l.history||[]), dataHojeBR(), l.origem||"app",
     l.qualification||"pendente", l.updatedAt||0, JSON.stringify(l.onboarding||null), l.dataConquista||"", l.origemCanal||"", l.stageMigradoV78||false,
-    (sc.manual===null||sc.manual===undefined) ? "" : sc.manual, l.clienteId||"", l.campanhaId||"" ];
+    (sc.manual===null||sc.manual===undefined) ? "" : sc.manual, l.clienteId||"", l.campanhaId||"",
+    l.atendenteNome||"", l.atendenteTelefone||"", JSON.stringify(l.contatosAdicionais||[]) ]; // V3.44
 }
 function gravarOportunidades(leads) {
   var aba = obterAba(SHEET_OPP, OPP_COLS);
