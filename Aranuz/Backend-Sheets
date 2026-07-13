@@ -1,6 +1,14 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_49.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_50.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.50 — 13/07/2026 (Rodada 9): só pareamento — nenhuma mudança neste arquivo. Todos os itens desta
+ * rodada são 100% front-end (App): (1) bugfix do status "sincronizado" da Planilha aparecendo sem URL
+ * configurada (lógica só em pullAndMerge(), front-end); (2) "Excluir Dados" virou cartão dentro de
+ * "Avançado" em vez de aba própria (reorganização visual, mesma função de sempre); (3) botões Salvar/
+ * Descartar Alterações moveram pro rodapé da janela; (4) correção de posição do bloco de sincronização/
+ * versão (barra lateral principal -> barra lateral própria da Central de Configurações). Nenhuma rota,
+ * coluna ou formato de dado novo aqui. Regras de Segurança do Firestore revisadas/reconfirmadas nesta
+ * rodada (ver Regras_Firebase.txt desta versão) — também sem mudança de rota/coluna no backend.
  * V3.49 — 13/07/2026 (Rodada 8): só pareamento — nenhuma mudança neste arquivo. A reforma de UI/UX da
  * Central de Configurações (Atalhos Rápidos, cartões nas abas Integração/Importação-Exportação-Backups/
  * Alertas/Personalização/Avançado, Manual de Uso inline, rodapé da barra lateral) é 100% front-end (App)
@@ -319,7 +327,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.49"; // V3.49 — 13/07/2026 (Rodada 8): só pareamento — ver changelog no topo do arquivo.
+var BACKEND_VERSION = "3.50"; // V3.50 — 13/07/2026 (Rodada 9): só pareamento — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.

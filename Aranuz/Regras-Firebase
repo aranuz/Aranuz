@@ -3,11 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================
-    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.44 (13/07/2026, Rodada 3)
-    // Pareada com Aranuz_App_V3_44.html / Aranuz_Backend_V3_44.gs / Aranuz_Admin_V3_42.html.
-    // Mudanças desta versão: "alertasEmailEnviados" restrita por empresa (cliente confirmou) — só quem
-    // pertence à MESMA empresa gravada no documento consegue ler/criar; antes qualquer autenticado, de
-    // qualquer empresa, conseguia ler o registro de dedup de outra empresa.
+    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.50 (13/07/2026, Rodada 9)
+    // Pareada com Aranuz_App_V3_50.html / Aranuz_Backend_V3_50.gs / Aranuz_Admin_V3_47.html.
+    // V3.50 — Rodada 9: REVISÃO/RECONFIRMAÇÃO PERIÓDICA (redistribuição obrigatória a cada 5 rodadas sem
+    // mudança de regra — a última mudança real foi na V3.44/Rodada 3). Todo o conteúdo abaixo foi
+    // reconferido nesta rodada e continua sendo o mesmo da V3.44, sem NENHUMA alteração de regra — só o
+    // pareamento de versão (número/data no topo) foi atualizado.
+    // Motivo da reconferência: o cliente relatou dois problemas nesta rodada — "app não conecta ao banco
+    // de dados do Firebase" e "status marca sincronizado mesmo sem app web configurado" — e pediu pra
+    // revisar estas regras junto. O segundo problema já foi encontrado e corrigido (era um bug 100%
+    // front-end em pullAndMerge(), nada a ver com Regras de Segurança — ver changelog da V3.50 no App).
+    // Já o primeiro ("não conecta") pode ter causas bem diferentes (regra bloqueando de verdade, versão
+    // errada publicada no Console, chave/projeto do Firebase incorretos, bloqueio de rede, etc.) — sem
+    // uma mensagem de erro específica do Console do navegador do cliente, mudar uma regra "no escuro"
+    // arrisca bloquear acesso de produção que hoje funciona. Por isso NENHUMA regra foi alterada nesta
+    // rodada — foi enviada uma pergunta ao cliente pedindo esses detalhes antes de qualquer mudança real.
+    // IMPORTANTE: se o problema de conexão for justamente "este arquivo nunca foi publicado de verdade no
+    // Console do Firebase" (ver "COMO PUBLICAR" logo abaixo) — causa já vista antes, ver nota da V3.43 —
+    // vale conferir isso primeiro, é a causa mais simples e mais comum pra "não conecta" nesse projeto.
+    //
+    // Mudanças da V3.44 (última mudança real de regra, mantida sem alteração nesta versão): coleção
+    // "alertasEmailEnviados" restrita por empresa (cliente confirmou) — só quem pertence à MESMA empresa
+    // gravada no documento consegue ler/criar; antes qualquer autenticado, de qualquer empresa, conseguia
+    // ler o registro de dedup de outra empresa.
     //
     // V3.43: (1) "reportsUsuarios" já estava correta desde a V3.34, mas o erro "Missing or insufficient
     // permissions" no Painel de Administração indicava que esta versão (ou mais nova) nunca tinha sido
