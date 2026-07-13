@@ -1667,196 +1667,7 @@
         </div>
     </div>
 
-    <!-- V17: Settings Modal -->
-    <div class="modal-overlay" id="modalSettingsOverlay">
-        <div class="modal-view large" style="max-height:90vh; overflow-y:auto;">
-            <div class="modal-header-title">🏢 Configurações da Empresa</div>
-            <div class="grid-inputs" style="margin-top:16px;">
-                <div class="form-section-title" style="margin-top:0;">Dados da Empresa</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Esses dados identificam a sua empresa e preenchem automaticamente a parte "CONTRATADA" de todo contrato gerado pelo app — sem eles, as tags de contrato saem em branco.</div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Razão Social</label>
-                        <input type="text" class="input-element" id="settRazaoSocial" placeholder="Ex: Sua Empresa LTDA.">
-                    </div>
-                    <div class="input-block">
-                        <label>Nome Fantasia</label>
-                        <input type="text" class="input-element" id="settNomeFantasia" placeholder="Ex: sua marca">
-                    </div>
-                </div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Usado em contratos, PDFs e relatórios exportados (no lugar de "Aranuz"). O nome "Aranuz" no topo do menu lateral é fixo e não muda mais com este campo.</div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>CNPJ</label>
-                        <input type="text" class="input-element" id="settCnpjEmpresa" placeholder="00.000.000/0001-00" maxlength="18" oninput="this.value=maskCNPJ_(this.value)">
-                    </div>
-                    <div class="input-block">
-                        <label>Endereço Completo</label>
-                        <input type="text" class="input-element" id="settEnderecoEmpresa" placeholder="Rua Exemplo, nº 000, Bairro, Cidade/UF, CEP: 00000-000">
-                        <div style="font-size:10.5px; color:var(--text-secondary); margin-top:4px;">Preencha com Rua ou Avenida, nº, complemento (se houver), bairro, cidade, estado (UF) e CEP.</div>
-                    </div>
-                </div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>E-mail de Contato</label>
-                        <input type="email" class="input-element" id="settEmailEmpresa" placeholder="contato@suaempresa.com">
-                    </div>
-                    <div class="input-block">
-                        <label>Telefone de Contato</label>
-                        <input type="text" class="input-element" id="settTelefoneEmpresa" placeholder="(27) 90000-0000">
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Site</label>
-                    <input type="text" class="input-element" id="settSiteEmpresa" placeholder="www.suaempresa.com">
-                </div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Usados para preencher automaticamente os PDFs e formulários exportados pelo app (orçamentos, propostas, relatório de equipamentos disponíveis etc.) — sem precisar editar nada no código.</div>
-                <!-- V197: segunda marca opcional — usada em contratos/telas de produções sob um nome
-                diferente do Nome Fantasia principal (ex: uma marca só para produções de cinema). Se ficar
-                vazio, o app usa o Nome Fantasia normal em todo lugar.
-                V3.08: essa linha (Alternativo + Cor da Marca) desceu pra abaixo do Site; o checkbox "Usar
-                cor da empresa?" que antes dividia a linha com a Cor do Logo ganhou linha própria abaixo. -->
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Nome Fantasia Alternativo (opcional)</label>
-                        <input type="text" class="input-element" id="settNomeFantasiaAlternativo" placeholder="Deixe em branco para usar sempre o Nome Fantasia acima">
-                    </div>
-                    <div class="input-block" style="max-width:220px;">
-                        <label>Código Cor da Marca</label>
-                        <input type="text" class="input-element" id="settCorLogo" placeholder="#b6002e">
-                    </div>
-                </div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Nome Fantasia Alternativo é usado em contratos/telas quando a empresa opera sob uma segunda marca em certos tipos de produção (ex: uma marca específica para cinema) — se ficar em branco, o app usa sempre o Nome Fantasia principal.</div>
-                <div class="input-block">
-                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="settUsarCorEmpresa"> Usar cor da empresa?</label>
-                </div>
-
-                <div class="form-section-title">Representante Legal</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Esses dados preenchem automaticamente a parte "CONTRATADA" de todo contrato gerado pelo app — sem eles, as tags de contrato saem em branco.</div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Nome Completo</label>
-                        <input type="text" class="input-element" id="settRepNomeEmpresa" placeholder="Ex: Fulano de Tal">
-                    </div>
-                    <div class="input-block">
-                        <label>Nacionalidade</label>
-                        <input type="text" class="input-element" id="settRepNacionalidadeEmpresa" placeholder="Brasileiro(a)">
-                    </div>
-                </div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Estado Civil</label>
-                        <input type="text" class="input-element" id="settRepEstadoCivilEmpresa" placeholder="Ex: Solteiro(a)">
-                    </div>
-                    <div class="input-block">
-                        <label>Profissão</label>
-                        <input type="text" class="input-element" id="settRepProfissaoEmpresa" placeholder="Ex: Diretor(a)">
-                    </div>
-                </div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>CPF</label>
-                        <input type="text" class="input-element" id="settRepCpfEmpresa" placeholder="000.000.000-00" maxlength="14" oninput="this.value=maskCPF_(this.value)">
-                    </div>
-                    <div class="input-block">
-                        <label>RG</label>
-                        <input type="text" class="input-element" id="settRepRgEmpresa" placeholder="Ex: 000000 — SSP/UF">
-                    </div>
-                </div>
-                <div class="input-block">
-                    <label>Endereço do Representante (residencial, com número)</label>
-                    <input type="text" class="input-element" id="settRepEnderecoEmpresa" placeholder="Rua Exemplo, nº 000, Bairro, Cidade/UF, CEP: 00000-000">
-                </div>
-                <div class="form-section-title">Financeiro e Contábil</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Taxas e datas usadas nos cálculos automáticos de impostos, período fiscal e contato com o contador.</div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Imposto Padrão (%)</label>
-                        <input type="number" class="input-element" id="settTaxRate" step="0.01" placeholder="6">
-                    </div>
-                    <div class="input-block">
-                        <label>Imposto Aluguel Equip. (%)</label>
-                        <input type="number" class="input-element" id="settTaxRateAluguel" step="0.01" placeholder="4">
-                    </div>
-                </div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Dia de Início do Período Fiscal</label>
-                        <input type="number" class="input-element" id="settDiaInicioPeriodoFiscal" min="1" max="28" placeholder="20">
-                    </div>
-                    <div class="input-block">
-                        <label>E-mail do Contador</label>
-                        <input type="email" class="input-element" id="settEmailContador" placeholder="contador@exemplo.com.br">
-                    </div>
-                </div>
-
-                <div class="form-section-title">Dados Bancários</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Usados na cláusula de pagamento via PIX/transferência dos contratos gerados pelo app.</div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Nome do Banco Principal</label>
-                        <input type="text" class="input-element" id="settBancoNome" placeholder="Ex: Banco do Brasil">
-                    </div>
-                    <div class="input-block">
-                        <label>Agência</label>
-                        <input type="text" class="input-element" id="settBancoAgencia" placeholder="Ex: 1234-5">
-                    </div>
-                </div>
-                <div class="grid-2-col">
-                    <div class="input-block">
-                        <label>Nº Conta</label>
-                        <input type="text" class="input-element" id="settBancoConta" placeholder="Ex: 12345678">
-                    </div>
-                    <div class="input-block">
-                        <label>Dígito</label>
-                        <input type="text" class="input-element" id="settBancoDigito" placeholder="Ex: 9">
-                    </div>
-                </div>
-
-                <div id="settSecaoLocacaoWrapper">
-                <div class="form-section-title">Configurações de Orçamento de Locação de Equipamentos</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Divisão padrão do valor em todo novo orçamento de Locação de Equipamentos (editável orçamento a orçamento). Some daqui se "Gestão de Locação" estiver desativada em Configurações Avançadas &gt; Gerenciar Seções do Menu.</div>
-                <div class="grid-3-col">
-                    <div class="input-block">
-                        <label style="min-height:28px; display:block;">Fundo de Depreciação (%)</label>
-                        <input type="number" class="input-element" id="settLocFundoDeprecPct" step="0.1" placeholder="40">
-                    </div>
-                    <div class="input-block">
-                        <label style="min-height:28px; display:block;">Custos Operacionais (%)</label>
-                        <input type="number" class="input-element" id="settLocCustosOpPct" step="0.1" placeholder="20">
-                    </div>
-                    <div class="input-block">
-                        <label style="min-height:28px; display:block;">Lucro Líquido (%)</label>
-                        <input type="number" class="input-element" id="settLocLucroPct" step="0.1" placeholder="40">
-                    </div>
-                </div>
-                <div class="input-block" style="max-width:280px;">
-                    <label>Reserva de Manutenção (%)</label>
-                    <input type="number" class="input-element" id="settManutPct" step="0.01" placeholder="15">
-                </div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-top:-10px; margin-bottom:12px;">Os Impostos de cada orçamento de locação usam por padrão o Imposto Aluguel Equip. (acima, em Financeiro e Contábil) — editável também orçamento a orçamento.</div>
-                </div>
-
-                <div class="form-section-title">Links e Formulários</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Links dos formulários públicos usados para captar cadastros e feedback sem exigir login.</div>
-                <div class="grid-inputs">
-                    <div class="input-block"><label>Formulário de Cadastro de Cliente</label><input type="text" class="input-element" id="settLinkFormularioCliente" placeholder="https://..."></div>
-                    <div class="input-block"><label>Formulário de Cadastro de Fornecedor</label><input type="text" class="input-element" id="settLinkFormularioFornecedor" placeholder="https://..."></div>
-                    <div class="input-block"><label>Formulário de Pesquisa de Satisfação (NPS)</label><input type="text" class="input-element" id="settLinkFormularioNps" placeholder="https://..."></div>
-                </div>
-
-                <div class="form-section-title">Alertas Proativos</div>
-                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Crie avisos mensais recorrentes personalizados — cada um aparece no card "Precisa de Atenção Agora" quando o dia do mês configurado se aproxima.</div>
-                <div id="settAlertasProativosList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-                <button type="button" class="btn-secondary" style="font-size:12px; padding:8px 16px;" onclick="addAlertaProativo()">+ Adicionar Alerta Proativo</button>
-            </div>
-            <div class="modal-buttons-row">
-                <button class="btn-secondary" onclick="closeSettingsModal()">Cancelar</button>
-                <button class="btn-primary" onclick="saveSettings()">Salvar</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- V3.36 -- 13/07/2026 (Rodada 3B): #modalSettingsOverlay REMOVIDO -- o formulario de Configuracoes da Empresa virou a aba "Produtora/Empresa" da Central de Configuracoes (ver _renderEmpresaTabContent_()), sem modal proprio duplicado. -->
     <div class="modal-overlay" id="modalAppConfigOverlay">
         <div class="modal-view large" style="max-height:90vh; overflow-y:auto;">
             <div class="modal-header-title">⚙ Configurações do App</div>
@@ -2249,7 +2060,7 @@
                     + '</div>';
             } else if(step === 2) {
                 html = '<div class="modal-header-title">🏢 Configuração inicial da empresa</div>'
-                    + '<div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin:12px 0 16px;">Estas são as informações básicas da sua empresa. Depois, em <strong>🏢 Configurações da Empresa</strong> (mesmo símbolo, no topo do app), você poderá completar todos os outros dados — representante legal, dados bancários, impostos, links de formulários e mais — usados automaticamente na geração de contratos e documentos exportados.</div>'
+                    + '<div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin:12px 0 16px;">Estas são as informações básicas da sua empresa. Depois, no ícone de engrenagem (⚙) no topo do app, na aba <strong>Produtora/Empresa</strong> da Central de Configurações, você poderá completar todos os outros dados — representante legal, dados bancários, impostos, links de formulários e mais — usados automaticamente na geração de contratos e documentos exportados.</div>'
                     + '<div class="grid-2-col">'
                     + '<div class="input-block"><label>Razão Social</label><input type="text" class="input-element" id="onbRazaoSocial" value="' + esc(getLink('razaoSocial')) + '" placeholder="Ex: Sua Empresa LTDA."></div>'
                     + '<div class="input-block"><label>Nome Fantasia</label><input type="text" class="input-element" id="onbNomeFantasia" value="' + esc(getLink('nomeFantasia')) + '" placeholder="Ex: sua marca"></div>'
@@ -3608,7 +3419,13 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
-        const FRONTEND_VERSION = '3.35';
+        // V3.36 — 13/07/2026 (Rodada 3B, Central de Configurações): aba "Produtora/Empresa" migrada de
+        // verdade — o formulário completo (Dados da Empresa, Representante Legal, Financeiro/Contábil,
+        // Dados Bancários, Locação, Links e Formulários, Alertas Proativos) agora é o conteúdo real da
+        // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
+        // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
+        // desnecessárias.
+        const FRONTEND_VERSION = '3.36';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -15473,12 +15290,17 @@
             // MESMOS campos/IDs que existiam em Configurações Avançadas — reaproveita a mesma função de
             // popular valores, que já tem guarda if(el) pra cada campo (não quebra se um não existir).
             setTimeout(popularCamposConfigAvancada, 0);
+            // V3.36 — Rodada 3B: idem pra aba "Produtora/Empresa" — openSettingsModal() só popula campos
+            // (não abre mais overlay nenhum), seguro de chamar mesmo se a aba ativa for outra (os ids
+            // simplesmente não existem no DOM nesse caso, e cada linha já checa isso implicitamente).
+            if (window._centralConfigTabAtual_ === 'empresa') setTimeout(openSettingsModal, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
             const body = document.getElementById('modalCentralConfigOverlayBody');
             if(body) body.innerHTML = _renderCentralConfig_();
             setTimeout(popularCamposConfigAvancada, 0);
+            if (key === 'empresa') setTimeout(openSettingsModal, 0);
         }
         // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
         // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
@@ -15518,18 +15340,11 @@
                 const semPrazo = !dados.licencaDias || Number(dados.licencaDias) === 0;
                 const licencaTxt = semPrazo ? 'Sem prazo (não expira)' : (_licencaVencimentoTexto_(dados) ? ('Vence em ' + _licencaVencimentoTexto_(dados)) : 'Ativa');
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Informações da Conta</div>'+
-                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:22px; max-width:520px;">'+
+                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:520px;">'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">Empresa</div><div style="font-size:13px; font-weight:600;">'+esc(nomeEmpresaConta)+'</div></div>'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">E-mail</div><div style="font-size:13px; font-weight:600;">'+esc(emailConta)+'</div></div>'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">Cadastrado em</div><div style="font-size:13px; font-weight:600;">'+esc(cadastradoEm)+'</div></div>'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">Licença de uso</div><div style="font-size:13px; font-weight:600;">'+esc(licencaTxt)+'</div></div>'+
-                    '</div>'+
-                    '<div style="font-size:14px; font-weight:700; margin-bottom:10px; padding-top:16px; border-top:1px solid var(--border-color);">Preferências Gerais</div>'+
-                    '<div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">O Aranuz hoje é 100% em português do Brasil — os campos abaixo são informativos (o app ainda não tem outros idiomas/moedas/fusos pra escolher). Se isso virar um pedido real no futuro, me avise que discutimos o tamanho desse projeto à parte.</div>'+
-                    '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; max-width:520px;">'+
-                    '<div><div style="font-size:11px; color:var(--text-secondary);">Idioma</div><div style="font-size:13px;">Português (Brasil)</div></div>'+
-                    '<div><div style="font-size:11px; color:var(--text-secondary);">Fuso horário</div><div style="font-size:13px;">Horário de Brasília (UTC-3)</div></div>'+
-                    '<div><div style="font-size:11px; color:var(--text-secondary);">Formato de data</div><div style="font-size:13px;">dd/mm/aaaa</div></div>'+
                     '</div>';
             } else if(atual === 'aparencia') {
                 const temaAtual = document.documentElement.getAttribute('data-theme') || 'light';
@@ -15561,9 +15376,7 @@
                     '<button type="button" class="btn-secondary" style="font-size:12px;" onclick="abrirChecklistSaudeModal_()">Rodar Verificação Agora</button>';
             } else if(atual === 'empresa') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Produtora/Empresa</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Razão social, CNPJ, representante legal, dados bancários, impostos padrão, links de formulários públicos e Alertas Proativos.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — a migração pra cá é a próxima sub-rodada (3B).</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); openSettingsModal();">Abrir Configurações da Empresa</button>';
+                    _renderEmpresaTabContent_();
             } else if(atual === 'integracao') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Integração</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Links da planilha, Drive, NFSe, cobrança, Agenda, chaves de API do Radar de Leads e busca de LinkedIn, além da Integração com Firestore.</div>'+
@@ -15643,6 +15456,191 @@
             openGenericModal('modalChangelogOverlay', html, true);
         }
         // --- Settings Modal ---
+        // V3.36 — 13/07/2026 (Rodada 3B): formulário de Configurações da Empresa, que antes vivia no seu
+        // próprio modal (#modalSettingsOverlay, removido nesta versão), agora é o conteúdo real da aba
+        // "Produtora/Empresa" da Central de Configurações — MESMOS ids de campo de sempre, então
+        // openSettingsModal()/saveSettings() continuam funcionando sem nenhuma mudança nelas.
+        function _renderEmpresaTabContent_() {
+            return `
+                <div class="grid-inputs">
+                    <div class="form-section-title" style="margin-top:0;">Dados da Empresa</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Esses dados identificam a sua empresa e preenchem automaticamente a parte "CONTRATADA" de todo contrato gerado pelo app — sem eles, as tags de contrato saem em branco.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Razão Social</label>
+                            <input type="text" class="input-element" id="settRazaoSocial" placeholder="Ex: Sua Empresa LTDA.">
+                        </div>
+                        <div class="input-block">
+                            <label>Nome Fantasia</label>
+                            <input type="text" class="input-element" id="settNomeFantasia" placeholder="Ex: sua marca">
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Usado em contratos, PDFs e relatórios exportados (no lugar de "Aranuz"). O nome "Aranuz" no topo do menu lateral é fixo e não muda mais com este campo.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>CNPJ</label>
+                            <input type="text" class="input-element" id="settCnpjEmpresa" placeholder="00.000.000/0001-00" maxlength="18" oninput="this.value=maskCNPJ_(this.value)">
+                        </div>
+                        <div class="input-block">
+                            <label>Endereço Completo</label>
+                            <input type="text" class="input-element" id="settEnderecoEmpresa" placeholder="Rua Exemplo, nº 000, Bairro, Cidade/UF, CEP: 00000-000">
+                            <div style="font-size:10.5px; color:var(--text-secondary); margin-top:4px;">Preencha com Rua ou Avenida, nº, complemento (se houver), bairro, cidade, estado (UF) e CEP.</div>
+                        </div>
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>E-mail de Contato</label>
+                            <input type="email" class="input-element" id="settEmailEmpresa" placeholder="contato@suaempresa.com">
+                        </div>
+                        <div class="input-block">
+                            <label>Telefone de Contato</label>
+                            <input type="text" class="input-element" id="settTelefoneEmpresa" placeholder="(27) 90000-0000">
+                        </div>
+                    </div>
+                    <div class="input-block">
+                        <label>Site</label>
+                        <input type="text" class="input-element" id="settSiteEmpresa" placeholder="www.suaempresa.com">
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Usados para preencher automaticamente os PDFs e formulários exportados pelo app (orçamentos, propostas, relatório de equipamentos disponíveis etc.) — sem precisar editar nada no código.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Nome Fantasia Alternativo (opcional)</label>
+                            <input type="text" class="input-element" id="settNomeFantasiaAlternativo" placeholder="Deixe em branco para usar sempre o Nome Fantasia acima">
+                        </div>
+                        <div class="input-block" style="max-width:220px;">
+                            <label>Código Cor da Marca</label>
+                            <input type="text" class="input-element" id="settCorLogo" placeholder="#b6002e">
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-8px;">Nome Fantasia Alternativo é usado em contratos/telas quando a empresa opera sob uma segunda marca em certos tipos de produção (ex: uma marca específica para cinema) — se ficar em branco, o app usa sempre o Nome Fantasia principal.</div>
+                    <div class="input-block">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="settUsarCorEmpresa"> Usar cor da empresa?</label>
+                    </div>
+
+                    <div class="form-section-title">Representante Legal</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Esses dados preenchem automaticamente a parte "CONTRATADA" de todo contrato gerado pelo app — sem eles, as tags de contrato saem em branco.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Nome Completo</label>
+                            <input type="text" class="input-element" id="settRepNomeEmpresa" placeholder="Ex: Fulano de Tal">
+                        </div>
+                        <div class="input-block">
+                            <label>Nacionalidade</label>
+                            <input type="text" class="input-element" id="settRepNacionalidadeEmpresa" placeholder="Brasileiro(a)">
+                        </div>
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Estado Civil</label>
+                            <input type="text" class="input-element" id="settRepEstadoCivilEmpresa" placeholder="Ex: Solteiro(a)">
+                        </div>
+                        <div class="input-block">
+                            <label>Profissão</label>
+                            <input type="text" class="input-element" id="settRepProfissaoEmpresa" placeholder="Ex: Diretor(a)">
+                        </div>
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>CPF</label>
+                            <input type="text" class="input-element" id="settRepCpfEmpresa" placeholder="000.000.000-00" maxlength="14" oninput="this.value=maskCPF_(this.value)">
+                        </div>
+                        <div class="input-block">
+                            <label>RG</label>
+                            <input type="text" class="input-element" id="settRepRgEmpresa" placeholder="Ex: 000000 — SSP/UF">
+                        </div>
+                    </div>
+                    <div class="input-block">
+                        <label>Endereço do Representante (residencial, com número)</label>
+                        <input type="text" class="input-element" id="settRepEnderecoEmpresa" placeholder="Rua Exemplo, nº 000, Bairro, Cidade/UF, CEP: 00000-000">
+                    </div>
+                    <div class="form-section-title">Financeiro e Contábil</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Taxas e datas usadas nos cálculos automáticos de impostos, período fiscal e contato com o contador.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Imposto Padrão (%)</label>
+                            <input type="number" class="input-element" id="settTaxRate" step="0.01" placeholder="6">
+                        </div>
+                        <div class="input-block">
+                            <label>Imposto Aluguel Equip. (%)</label>
+                            <input type="number" class="input-element" id="settTaxRateAluguel" step="0.01" placeholder="4">
+                        </div>
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Dia de Início do Período Fiscal</label>
+                            <input type="number" class="input-element" id="settDiaInicioPeriodoFiscal" min="1" max="28" placeholder="20">
+                        </div>
+                        <div class="input-block">
+                            <label>E-mail do Contador</label>
+                            <input type="email" class="input-element" id="settEmailContador" placeholder="contador@exemplo.com.br">
+                        </div>
+                    </div>
+
+                    <div class="form-section-title">Dados Bancários</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Usados na cláusula de pagamento via PIX/transferência dos contratos gerados pelo app.</div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Nome do Banco Principal</label>
+                            <input type="text" class="input-element" id="settBancoNome" placeholder="Ex: Banco do Brasil">
+                        </div>
+                        <div class="input-block">
+                            <label>Agência</label>
+                            <input type="text" class="input-element" id="settBancoAgencia" placeholder="Ex: 1234-5">
+                        </div>
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="input-block">
+                            <label>Nº Conta</label>
+                            <input type="text" class="input-element" id="settBancoConta" placeholder="Ex: 12345678">
+                        </div>
+                        <div class="input-block">
+                            <label>Dígito</label>
+                            <input type="text" class="input-element" id="settBancoDigito" placeholder="Ex: 9">
+                        </div>
+                    </div>
+
+                    <div id="settSecaoLocacaoWrapper">
+                    <div class="form-section-title">Configurações de Orçamento de Locação de Equipamentos</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Divisão padrão do valor em todo novo orçamento de Locação de Equipamentos (editável orçamento a orçamento). Some daqui se "Gestão de Locação" estiver desativada em Personalização &gt; Menus e Seções.</div>
+                    <div class="grid-3-col">
+                        <div class="input-block">
+                            <label style="min-height:28px; display:block;">Fundo de Depreciação (%)</label>
+                            <input type="number" class="input-element" id="settLocFundoDeprecPct" step="0.1" placeholder="40">
+                        </div>
+                        <div class="input-block">
+                            <label style="min-height:28px; display:block;">Custos Operacionais (%)</label>
+                            <input type="number" class="input-element" id="settLocCustosOpPct" step="0.1" placeholder="20">
+                        </div>
+                        <div class="input-block">
+                            <label style="min-height:28px; display:block;">Lucro Líquido (%)</label>
+                            <input type="number" class="input-element" id="settLocLucroPct" step="0.1" placeholder="40">
+                        </div>
+                    </div>
+                    <div class="input-block" style="max-width:280px;">
+                        <label>Reserva de Manutenção (%)</label>
+                        <input type="number" class="input-element" id="settManutPct" step="0.01" placeholder="15">
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-10px; margin-bottom:12px;">Os Impostos de cada orçamento de locação usam por padrão o Imposto Aluguel Equip. (acima, em Financeiro e Contábil) — editável também orçamento a orçamento.</div>
+                    </div>
+
+                    <div class="form-section-title">Links e Formulários</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Links dos formulários públicos usados para captar cadastros e feedback sem exigir login.</div>
+                    <div class="grid-inputs">
+                        <div class="input-block"><label>Formulário de Cadastro de Cliente</label><input type="text" class="input-element" id="settLinkFormularioCliente" placeholder="https://..."></div>
+                        <div class="input-block"><label>Formulário de Cadastro de Fornecedor</label><input type="text" class="input-element" id="settLinkFormularioFornecedor" placeholder="https://..."></div>
+                        <div class="input-block"><label>Formulário de Pesquisa de Satisfação (NPS)</label><input type="text" class="input-element" id="settLinkFormularioNps" placeholder="https://..."></div>
+                    </div>
+
+                    <div class="form-section-title">Alertas Proativos</div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Crie avisos mensais recorrentes personalizados — cada um aparece no card "Precisa de Atenção Agora" quando o dia do mês configurado se aproxima.</div>
+                    <div id="settAlertasProativosList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+                    <button type="button" class="btn-secondary" style="font-size:12px; padding:8px 16px;" onclick="addAlertaProativo()">+ Adicionar Alerta Proativo</button>
+                </div>
+                <div class="modal-buttons-row">
+                    <button class="btn-secondary" onclick="openSettingsModal()">Descartar Alterações</button>
+                    <button class="btn-primary" onclick="saveSettings()">Salvar</button>
+                </div>`;
+        }
         function openSettingsModal() {
             document.getElementById('settRazaoSocial').value = getLink('razaoSocial');
             document.getElementById('settNomeFantasia').value = getLink('nomeFantasia');
@@ -15682,9 +15680,17 @@
             // Gerenciar Seções do Menu (ver MENU_ESTRUTURA / _tabMenuOculta_).
             const wrapperLocacaoSettings = document.getElementById('settSecaoLocacaoWrapper');
             if (wrapperLocacaoSettings) wrapperLocacaoSettings.style.display = _tabMenuOculta_('equiploc-gestao') ? 'none' : '';
-            document.getElementById('modalSettingsOverlay').style.display = 'flex';
+            // V3.36 — 13/07/2026 (Rodada 3B): este formulário deixou de viver num modal próprio — agora é
+            // o conteúdo da aba "Produtora/Empresa" da Central de Configurações (ver
+            // _renderEmpresaTabContent_()). Sem overlay pra mostrar; só popula os campos mesmo.
+            const elOverlayAntigo = document.getElementById('modalSettingsOverlay');
+            if (elOverlayAntigo) elOverlayAntigo.style.display = 'flex';
         }
-        function closeSettingsModal() { document.getElementById('modalSettingsOverlay').style.display = 'none'; }
+        function closeSettingsModal() {
+            // V3.36 — Rodada 3B: sem modal próprio pra fechar mais; usado pelo botão "Cancelar" só pra
+            // descartar edições não salvas, repopulando os campos com os valores salvos de verdade.
+            openSettingsModal();
+        }
         // V174: lista de Alertas Proativos personalizados, recorrentes por mês (Configurações da Empresa).
         // Cada um vira uma demanda automática no card "Precisa de Atenção Agora" quando o dia do mês
         // configurado se aproxima — ver hook em getDemandasGerais().
@@ -15813,7 +15819,8 @@
             setLink('linkFormularioFornecedor', document.getElementById('settLinkFormularioFornecedor').value.trim());
             setLink('linkFormularioNps', document.getElementById('settLinkFormularioNps').value.trim());
             setLink('alertasProativosCustom', JSON.stringify((state.currentAlertasProativos||[]).filter(function(a){ return (a.nome||'').trim(); })));
-            closeSettingsModal();
+            // V3.36 — Rodada 3B: antes fechava um modal próprio (closeSettingsModal()) — agora o
+            // formulário vive dentro da aba "Produtora/Empresa" da Central de Config, não tem o que fechar.
             showToast('Configurações da empresa salvas!');
             saveDb();
         }
