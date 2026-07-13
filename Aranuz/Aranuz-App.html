@@ -167,7 +167,7 @@
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; }
         /* V3.27 — Bloco 12: toggle estilo Claude (aplicado nos checkboxes de Gerenciar Seções do Menu).
            Puramente visual — o input continua sendo um checkbox normal (mesmo onchange, mesmo comportamento). */
-        input.chk-toggle-claude { appearance: none; -webkit-appearance: none; position: relative; width: 38px; height: 22px; min-width: 38px; border-radius: 22px; background: #ccc; cursor: pointer; outline: none; transition: background .2s; vertical-align: middle; margin: 0; flex-shrink: 0; }
+        input.chk-toggle-claude { appearance: none; -webkit-appearance: none; -moz-appearance: none; position: relative; width: 38px; height: 22px; min-width: 38px; border-radius: 22px; background: #ccc; cursor: pointer; outline: none; transition: background .2s; vertical-align: middle; margin: 0; flex-shrink: 0; }
         input.chk-toggle-claude:checked { background: var(--accent-primary); }
         input.chk-toggle-claude::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
         input.chk-toggle-claude:checked::after { left: 18px; }
@@ -3316,6 +3316,11 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        // V3.39 — 13/07/2026 (Rodada 4, Central de Configurações 3E): aba "Alertas" migrada de verdade —
+        // Alertas Automáticos do Sistema, Alertas Personalizáveis (prazo/limite) e E-mails e Alertas,
+        // seções separadas por linhas sutis. "Alertas Proativos" renomeado "Alertas Personalizados" e
+        // movido de Produtora/Empresa pra cá, com salvamento próprio (salvarAlertasPersonalizados_()).
+        // Bugfix cross-browser: toggles sem -moz-appearance:none apareciam incompletos no Firefox.
         // V3.38 — 13/07/2026 (Rodada 4, Central de Configurações 3D): aba "Importação, Exportação e
         // Backups" migrada de verdade — layout em linhas exatamente como pedido (Importação em Massa;
         // Importar/Exportar Configurações; Restaurar Base a partir de um Backup; Backup Diário Automático;
@@ -3331,7 +3336,7 @@
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.38';
+        const FRONTEND_VERSION = '3.39';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -8736,15 +8741,15 @@
                 <p><strong>E-mail, Telefone e Site:</strong> dados de contato da empresa, usados para preencher automaticamente os PDFs exportados (Proposta de Orçamento, Orçamento de Locação, Equipamentos Disponíveis) — configure uma vez aqui e todos os documentos exportados já saem atualizados, sem precisar editar nada no código.</p>
                 <p><strong>Dados Bancários e Financeiro e Contábil:</strong> banco/agência/conta, impostos padrão e de aluguel de equipamento, dia de início do período fiscal e e-mail do contador (a meta anual de faturamento é editada direto no card da Meta, fora desta janela).</p>
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
-                <p><strong>Alertas Proativos:</strong> crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
-                <p><strong>Alertas Automáticos do Sistema</strong> (Configurações Avançadas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore) e Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; Alertas, Personalização e Avançado ainda abrem a página "Configurações Avançadas" por um botão, enquanto essas migrações não terminam — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
+                <p><strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas): crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
+                <p><strong>Alertas Automáticos do Sistema</strong> (Central de Configurações &gt; Alertas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados) e Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; Personalização e Avançado ainda abrem a página "Configurações Avançadas" por um botão, enquanto essas migrações não terminam — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
                 <p><strong>Gerenciar Seções do Menu</strong> (dentro de Configurações Avançadas) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
             { icone: '🛠', titulo: '6. Configurações Avançadas — guia completo dos controles', corpo: `
                 <p>Esta tela fica em <em>Configurações do App (⚙) → Configurações Avançadas</em>. Abaixo, o que cada bloco faz, na mesma ordem em que aparece na tela.</p>
-                <p><strong>Alertas Automáticos do Sistema:</strong> 18 avisos que o sino do topo gera sozinho, sem cadastro manual (15 com prazo fixo + 3 com limite personalizável — Alertas Culturais e Concentração de Cliente) — cada um com seu próprio interruptor (liga/desliga). Isso é diferente dos <strong>Alertas Proativos</strong> personalizados (cadastrados em Configurações da Empresa, com nome/descrição/dia do mês escolhidos por você) e do card <strong>Demandas</strong> no Resumo (gerado a partir de pendências reais, não é uma lista configurável). Ver a lista completa no tópico "5. Configuração inicial".</p>
+                <p><strong>Alertas Automáticos do Sistema:</strong> 18 avisos que o sino do topo gera sozinho, sem cadastro manual (15 com prazo fixo + 3 com limite personalizável — Alertas Culturais e Concentração de Cliente) — cada um com seu próprio interruptor (liga/desliga). Isso é diferente dos <strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas, com nome/descrição/dia do mês escolhidos por você) e do card <strong>Demandas</strong> no Resumo (gerado a partir de pendências reais, não é uma lista configurável). Ver a lista completa no tópico "5. Configuração inicial".</p>
                 <p><strong>Etapas e Categorias</strong> (botão "Gerenciar Etapas e Categorias"): personalize nomes, ordem e adicione novas Etapas de Projeto, Categorias de Projeto e Etapas do Funil de Leads — sem mexer em código. Alguns itens usados em automações do próprio sistema (ex: "No Radar" no funil de leads, ou as etapas que disparam alertas automáticos) ficam com um cadeado 🔒: não dá pra renomear ou excluir esses, só reordenar. Nessa mesma tela também ficam os <strong>intervalos de próxima ação e de inatividade</strong> por etapa do funil (usados no auto-sweep de leads parados — ver tópico 8).</p>
                 <p><strong>Barra Lateral</strong> (botão "Gerenciar Seções do Menu"): esconde seções inteiras (ex: "Recursos e Operacional") ou telas específicas dentro de uma seção (ex: só "Time-Tracker") que a equipe não usa. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios. Reversível a qualquer momento, na mesma tela.</p>
                 <p><strong>Exportação Automática:</strong> escolha uma Seção (Comercial, Orçamentos, Projetos, Financeiro, Equipamentos e Locações, Equipe e RH, Metas e Satisfação) e uma Frequência (Diária, Semanal — toda segunda —, ou Mensal — todo dia 1º) e clique em Salvar — a partir daí, uma planilha Google com aqueles dados é gerada sozinha, sem precisar abrir o app, na pasta "Exportações Aranuz" do Drive. Escolher "Nenhuma (desativada)" na Seção desliga a exportação automática.</p>
@@ -15111,6 +15116,11 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.39', data: '13/07/2026', itens: [
+                'Central de Configurações — aba "Alertas": migrada pra dentro da Central (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas), seções separadas por linhas sutis.',
+                '"Alertas Proativos" (Produtora/Empresa) renomeado para "Alertas Personalizados" e movido pra dentro da aba Alertas, com salvamento próprio.',
+                'Bugfix: toggles (botões de liga/desliga) que só apareciam completos quando desativados — corrigido (faltava -moz-appearance:none no CSS, afetava o Firefox).'
+            ]},
             { versao: '3.38', data: '13/07/2026', itens: [
                 'Central de Configurações — aba "Importação, Exportação e Backups": migrada pra dentro da Central, no layout em linhas pedido (Importação em Massa; Importar/Exportar Configurações; Restaurar Base a partir de um Backup; Backup Diário Automático; Exportação Automática; Exportar Dados). Exportar Dados ganhou entrada aqui (continua também disponível na barra lateral por enquanto).',
                 'Bugfix: ícone de ajuda que aparecia como texto cru "${ICON_AJUDA_SVG_14}" na tela corrigido nesses itens migrados.'
@@ -15215,6 +15225,9 @@
             // (não abre mais overlay nenhum desde esta versão), seguro de chamar mesmo se a aba ativa
             // for outra (os ids simplesmente não existem no DOM nesse caso).
             if (window._centralConfigTabAtual_ === 'integracao') setTimeout(openAppConfigModal, 0);
+            // V3.39 — Rodada 4 (3E): idem pra aba "Alertas" — popula a lista de Alertas Personalizados
+            // (antigo "Alertas Proativos", que morava na aba Empresa) sem abrir nada.
+            if (window._centralConfigTabAtual_ === 'alertas') setTimeout(_popularAlertasPersonalizados_, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
@@ -15223,6 +15236,7 @@
             setTimeout(popularCamposConfigAvancada, 0);
             if (key === 'empresa') setTimeout(openSettingsModal, 0);
             if (key === 'integracao') setTimeout(openAppConfigModal, 0); // V3.37 — Rodada 4 (3C)
+            if (key === 'alertas') setTimeout(_popularAlertasPersonalizados_, 0); // V3.39 — Rodada 4 (3E)
         }
         // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
         // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
@@ -15307,9 +15321,7 @@
                     _renderImportExportBackupTabContent_();
             } else if(atual === 'alertas') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Alertas</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Alertas Automáticos do Sistema, Alertas Personalizáveis e E-mails e Alertas.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração + correção dos toggles e divisórias planejada pra sub-rodada 3E.</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+                    _renderAlertasTabContent_();
             } else if(atual === 'personalizacao') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Personalização</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Etapas e Categorias, Menus e Seções (Barra Lateral) e Contratos.</div>'+
@@ -15549,10 +15561,10 @@
                         <div class="input-block"><label>Formulário de Pesquisa de Satisfação (NPS)</label><input type="text" class="input-element" id="settLinkFormularioNps" placeholder="https://..."></div>
                     </div>
 
-                    <div class="form-section-title">Alertas Proativos</div>
-                    <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Crie avisos mensais recorrentes personalizados — cada um aparece no card "Precisa de Atenção Agora" quando o dia do mês configurado se aproxima.</div>
-                    <div id="settAlertasProativosList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-                    <button type="button" class="btn-secondary" style="font-size:12px; padding:8px 16px;" onclick="addAlertaProativo()">+ Adicionar Alerta Proativo</button>
+                    <!-- V3.39 -- 13/07/2026 (Rodada 4, 3E): "Alertas Proativos" REMOVIDO daqui -- virou
+                         "Alertas Personalizados" na aba "Alertas" da Central de Configurações (pedido do
+                         cliente: sair de Produtora/Empresa), com salvamento próprio (ver
+                         salvarAlertasPersonalizados_()). -->
                 </div>
                 <div class="modal-buttons-row">
                     <button class="btn-secondary" onclick="openSettingsModal()">Descartar Alterações</button>
@@ -15589,8 +15601,8 @@
             document.getElementById('settLinkFormularioCliente').value = getLink('linkFormularioCliente');
             document.getElementById('settLinkFormularioFornecedor').value = getLink('linkFormularioFornecedor');
             document.getElementById('settLinkFormularioNps').value = getLink('linkFormularioNps');
-            try { state.currentAlertasProativos = JSON.parse(getLink('alertasProativosCustom')||'[]'); } catch(e) { state.currentAlertasProativos = []; }
-            renderAlertasProativosConfig();
+            // V3.39 — Rodada 4 (3E): população de Alertas Personalizados saiu daqui — não vive mais na
+            // aba Empresa (ver _popularAlertasPersonalizados_(), chamada ao abrir a aba "Alertas").
             document.getElementById('settLocFundoDeprecPct').value = (LOC_FUNDO_DEPREC_PCT * 100).toFixed(1);
             document.getElementById('settLocCustosOpPct').value = (LOC_CUSTOS_OP_PCT * 100).toFixed(1);
             document.getElementById('settLocLucroPct').value = (LOC_LUCRO_PCT * 100).toFixed(1);
@@ -15736,7 +15748,9 @@
             setLink('linkFormularioCliente', document.getElementById('settLinkFormularioCliente').value.trim());
             setLink('linkFormularioFornecedor', document.getElementById('settLinkFormularioFornecedor').value.trim());
             setLink('linkFormularioNps', document.getElementById('settLinkFormularioNps').value.trim());
-            setLink('alertasProativosCustom', JSON.stringify((state.currentAlertasProativos||[]).filter(function(a){ return (a.nome||'').trim(); })));
+            // V3.39 — Rodada 4 (3E): setLink('alertasProativosCustom', ...) REMOVIDO daqui — Alertas
+            // Personalizados não vive mais na aba Empresa; salvar aqui sem popular state.currentAlertasProativos
+            // (que deixou de ser lido nesta aba) apagaria os alertas já salvos. Ver salvarAlertasPersonalizados_().
             // V3.36 — Rodada 3B: antes fechava um modal próprio (closeSettingsModal()) — agora o
             // formulário vive dentro da aba "Produtora/Empresa" da Central de Config, não tem o que fechar.
             showToast('Configurações da empresa salvas!');
@@ -15821,6 +15835,142 @@
                         </button>
                     </div>
                 </div>`;
+        }
+        // V3.39 — 13/07/2026 (Rodada 4, Central de Configurações 3E): conteúdo real da aba "Alertas" —
+        // Alertas Automáticos do Sistema, Alertas Personalizáveis (prazo/limite), E-mails e Alertas e
+        // Alertas Personalizados (renomeado de "Alertas Proativos", que morava em Produtora/Empresa —
+        // agora vive só aqui). Seções separadas por linhas sutis (border-top), como pedido. Reaproveita
+        // 100% os ids/funções já existentes (populados por popularCamposConfigAvancada, exceto Alertas
+        // Personalizados, que tem sua própria população — ver _popularAlertasPersonalizados_()).
+        function _renderAlertasTabContent_() {
+            return `
+                <div style="display:flex; flex-direction:column; gap:20px; max-width:680px;">
+                    <div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;"><span class="form-section-title" style="margin:0;">Alertas Automáticos do Sistema</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('alertasSistema')">${ICON_AJUDA_SVG_14}</button></div>
+                        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;">
+                            ${ALERTAS_SISTEMA_TOGGLES.slice(0,5).map(function(t){ return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaSis_${t.chave}" onchange="toggleAlertaSistema('${t.chave}', this.checked)"> ${esc(t.label)}</label>`; }).join('')}
+                        </div>
+                        <div id="alertasSimplesExtra" style="display:none; flex-direction:column; gap:6px; margin-bottom:8px;">
+                            ${ALERTAS_SISTEMA_TOGGLES.slice(5).map(function(t){ return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaSis_${t.chave}" onchange="toggleAlertaSistema('${t.chave}', this.checked)"> ${esc(t.label)}</label>`; }).join('')}
+                        </div>
+                        ${ALERTAS_SISTEMA_TOGGLES.length > 5 ? `<button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px;" id="btnToggleAlertasSimples" onclick="toggleListaAvancada('alertasSimplesExtra','btnToggleAlertasSimples', ${ALERTAS_SISTEMA_TOGGLES.length})">Mostrar todos (${ALERTAS_SISTEMA_TOGGLES.length})</button>` : ''}
+                    </div>
+
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;"><span class="form-section-title" style="margin:0;">Alertas Personalizáveis (prazo/limite)</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('alertasLimite')">${ICON_AJUDA_SVG_14}</button></div>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaPrestacaoContas" onchange="toggleAlertaSistema('alertaPrestacaoContasCultural', this.checked)"> Prestação de Contas a vencer</label>
+                                <span style="color:var(--text-secondary);">— avisar com</span>
+                                <input type="number" min="0" class="input-element" id="settAlertaPrestacaoContasDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaCulturalDias_('alertaPrestacaoContasCulturalDias', this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaEditalResultado" onchange="toggleAlertaSistema('alertaEditalResultado', this.checked)"> Resultado de Edital se aproximando</label>
+                                <span style="color:var(--text-secondary);">— avisar</span>
+                                <input type="text" class="input-element" id="settAlertaEditalResultadoDias" style="width:140px; padding:4px 8px;" placeholder="15,10,5,0" onchange="salvarAlertaCulturalDias_('alertaEditalResultadoDias', this.value)">
+                                <span style="color:var(--text-secondary);">dias antes (vírgula; 0 = no dia)</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaConcentracaoCliente" onchange="toggleAlertaSistema('alertaConcentracaoCliente', this.checked)"> Concentração de cliente acima do limite (12 meses)</label>
+                                <span style="color:var(--text-secondary);">— avisar acima de</span>
+                                <input type="number" min="1" max="100" class="input-element" id="settAlertaConcentracaoClienteLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaConcentracaoLimite_(this.value)">
+                                <span style="color:var(--text-secondary);">% da receita</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaNpsBaixo" onchange="toggleAlertaSistema('alertaNpsBaixo', this.checked)"> Nota de NPS abaixo do limite</label>
+                                <span style="color:var(--text-secondary);">— avisar abaixo de</span>
+                                <input type="number" min="0" max="10" step="0.5" class="input-element" id="settAlertaNpsBaixoLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaNpsBaixoLimite_(this.value)">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaDescontoAlto" onchange="toggleAlertaSistema('alertaDescontoAlto', this.checked)"> Desconto acima do normal em proposta</label>
+                                <span style="color:var(--text-secondary);">— avisar acima de</span>
+                                <input type="number" min="0" max="100" class="input-element" id="settAlertaDescontoAltoLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaDescontoAltoLimite_(this.value)">
+                                <span style="color:var(--text-secondary);">%</span>
+                            </div>
+                        </div>
+                        <div id="alertasLimiteExtra" style="display:none; flex-direction:column; gap:10px; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaReajusteRecorrente" onchange="toggleAlertaSistema('alertaReajusteRecorrente', this.checked)"> Reajuste de cliente recorrente vencido</label>
+                                <span style="color:var(--text-secondary);">— avisar com</span>
+                                <input type="number" min="0" class="input-element" id="settAlertaReajusteRecorrenteDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaReajusteRecorrenteDias_(this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaObjetivoParado" onchange="toggleAlertaSistema('alertaObjetivoParado', this.checked)"> Objetivo do Mês parado (sem incremento)</label>
+                                <span style="color:var(--text-secondary);">— avisar depois de</span>
+                                <input type="number" min="1" class="input-element" id="settAlertaObjetivoParadoDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaObjetivoParadoDias_(this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) sem registro</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaEntradaSemNF" onchange="toggleAlertaSistema('alertaEntradaSemNF', this.checked)"> Entrada paga sem Nota Fiscal emitida</label>
+                                <span style="color:var(--text-secondary);">— avisar depois de</span>
+                                <input type="number" min="0" class="input-element" id="settAlertaEntradaSemNFDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaEntradaSemNFDias_(this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) da Data de Pagamento</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaNpsSolicitar" onchange="toggleAlertaSistema('alertaNpsSolicitar', this.checked)"> Pedir pesquisa de NPS após a entrega</label>
+                                <span style="color:var(--text-secondary);">— avisar</span>
+                                <input type="number" min="0" class="input-element" id="settAlertaNpsSolicitarDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaNpsSolicitarDias_(this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) após "Entregue"</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaManutencaoEquipamento" onchange="toggleAlertaSistema('alertaManutencaoEquipamento', this.checked)"> Manutenção preventiva de equipamento se aproximando</label>
+                                <span style="color:var(--text-secondary);">— avisar com</span>
+                                <input type="number" min="0" class="input-element" id="settAlertaManutencaoEquipamentoDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaManutencaoEquipamentoDias_(this.value)">
+                                <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px;" id="btnToggleAlertasLimite" onclick="toggleListaAvancada('alertasLimiteExtra','btnToggleAlertasLimite', 10)">Mostrar todos (10)</button>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;"><span class="form-section-title" style="margin:0;">E-mails e Alertas</span><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('emailsAlertas')">${ICON_AJUDA_SVG_14}</button></div>
+                        <div class="grid-2-col" style="margin-bottom:12px;">
+                            <div class="input-block" style="margin:0;"><label style="font-size:11px;">Destinatários (separados por vírgula)</label><input type="text" class="input-element" id="settEmailDestinatariosAlertas" placeholder="financeiro@empresa.com, socio@empresa.com" onchange="salvarEmailDestinatariosAlertas_(this.value)"></div>
+                            <div class="input-block" style="margin:0;"><label style="font-size:11px;">Nome do remetente (exibição)</label><input type="text" class="input-element" id="settEmailRemetenteNome" placeholder="Ex: Aranuz — Sua Empresa" onchange="salvarEmailRemetenteNome_(this.value)"></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaCriticoEmail" onchange="toggleAlertaCriticoEmail(this.checked)"> Alertas Críticos por E-mail (os mesmos avisos do sino, mandados também por e-mail)</label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settResumoSemanalEmail" onchange="toggleResumoSemanalEmail(this.checked)"> Resumo Semanal por E-mail (toda segunda-feira de manhã)</label>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioFinanceiroEmail" onchange="toggleRelatorioFinanceiroEmail(this.checked)"> Relatório Financeiro Agendado por E-mail</label>
+                                <span style="color:var(--text-secondary);">— frequência</span>
+                                <select class="list-stage-select" id="settRelatorioFinanceiroFrequencia" onchange="salvarRelatorioFinanceiroFrequencia_(this.value)"><option value="semanal">Semanal</option><option value="mensal">Mensal (dia 1º)</option></select>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-secondary); padding-left:4px;">
+                                <span>Incluir no relatório:</span>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirLeads" onchange="salvarRelatorioSecao_('relatorioIncluirLeads', this.checked)"> Leads</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirProjetos" onchange="salvarRelatorioSecao_('relatorioIncluirProjetos', this.checked)"> Projetos</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirNps" onchange="salvarRelatorioSecao_('relatorioIncluirNps', this.checked)"> NPS</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Alertas Personalizados</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Crie avisos mensais recorrentes personalizados — cada um aparece no card "Precisa de Atenção Agora" quando o dia do mês configurado se aproxima.</div>
+                        <div id="settAlertasProativosList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" class="btn-secondary" style="font-size:12px; padding:8px 16px;" onclick="addAlertaProativo()">+ Adicionar Alerta Personalizado</button>
+                            <button type="button" class="btn-primary" style="font-size:12px; padding:8px 16px;" onclick="salvarAlertasPersonalizados_()">Salvar Alertas Personalizados</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        // V3.39 — 13/07/2026 (Rodada 4, 3E): popula a lista de Alertas Personalizados ao abrir a aba
+        // "Alertas" — mesma lógica que já vivia dentro de openSettingsModal() (aba Empresa), só que agora
+        // é chamada quando a aba certa está ativa (renderAlertasProativosConfig() já existe, não mudou).
+        function _popularAlertasPersonalizados_() {
+            try { state.currentAlertasProativos = JSON.parse(getLink('alertasProativosCustom')||'[]'); } catch(e) { state.currentAlertasProativos = []; }
+            renderAlertasProativosConfig();
+        }
+        // V3.39 — salva só os Alertas Personalizados (chave 'alertasProativosCustom'), sem depender de
+        // saveSettings() (que exige os campos da aba Empresa, inexistentes aqui).
+        function salvarAlertasPersonalizados_() {
+            setLink('alertasProativosCustom', JSON.stringify((state.currentAlertasProativos||[]).filter(function(a){ return (a.nome||'').trim(); })));
+            saveDb();
+            showToast('Alertas Personalizados salvos!');
         }
         // V3.37 — 13/07/2026 (Rodada 4, Central de Configurações 3C): formulário de Configurações do App
         // (antes no modal próprio #modalAppConfigOverlay, removido nesta versão) agora é o conteúdo real
@@ -16358,34 +16508,8 @@
                             <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRetryFirestoreAutomatico" onchange="toggleRetryFirestoreAutomatico(this.checked)"> Tentar novamente automaticamente em falhas pontuais de conexão com o Firestore</label>
                         </div>
 
-                        <!-- V3.17 — Bloco 3: card novo — E-mails e Alertas. Os 3 recursos nascem
-                             desativados; Resumo Semanal e Relatório Financeiro exigem a URL da API (Apps
-                             Script Web App) configurada, porque rodam por gatilho no backend. -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">📧 E-mails e Alertas</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('emailsAlertas')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div class="grid-2-col" style="margin-bottom:12px;">
-                                <div class="input-block" style="margin:0;"><label style="font-size:11px;">Destinatários (separados por vírgula)</label><input type="text" class="input-element" id="settEmailDestinatariosAlertas" placeholder="financeiro@empresa.com, socio@empresa.com" onchange="salvarEmailDestinatariosAlertas_(this.value)"></div>
-                                <div class="input-block" style="margin:0;"><label style="font-size:11px;">Nome do remetente (exibição)</label><input type="text" class="input-element" id="settEmailRemetenteNome" placeholder="Ex: Aranuz — Sua Empresa" onchange="salvarEmailRemetenteNome_(this.value)"></div>
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:10px;">
-                                <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaCriticoEmail" onchange="toggleAlertaCriticoEmail(this.checked)"> Alertas Críticos por E-mail (os mesmos avisos do sino, mandados também por e-mail)</label>
-                                <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settResumoSemanalEmail" onchange="toggleResumoSemanalEmail(this.checked)"> Resumo Semanal por E-mail (toda segunda-feira de manhã)</label>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioFinanceiroEmail" onchange="toggleRelatorioFinanceiroEmail(this.checked)"> Relatório Financeiro Agendado por E-mail</label>
-                                    <span style="color:var(--text-secondary);">— frequência</span>
-                                    <select class="list-stage-select" id="settRelatorioFinanceiroFrequencia" onchange="salvarRelatorioFinanceiroFrequencia_(this.value)"><option value="semanal">Semanal</option><option value="mensal">Mensal (dia 1º)</option></select>
-                                </div>
-                                <!-- V3.27 — Bloco 9: quais seções entram no relatório (o próprio e-mail
-                                     também vem em PDF anexado agora, além do corpo em HTML). -->
-                                <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-secondary); padding-left:4px;">
-                                    <span>Incluir no relatório:</span>
-                                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirLeads" onchange="salvarRelatorioSecao_('relatorioIncluirLeads', this.checked)"> Leads</label>
-                                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirProjetos" onchange="salvarRelatorioSecao_('relatorioIncluirProjetos', this.checked)"> Projetos</label>
-                                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRelatorioIncluirNps" onchange="salvarRelatorioSecao_('relatorioIncluirNps', this.checked)"> NPS</label>
-                                </div>
-                            </div>
-                        </div>
-
+                        <!-- V3.39 -- 13/07/2026 (Rodada 4, 3E): cartão "E-mails e Alertas" REMOVIDO daqui
+                             -- migrado pra aba "Alertas" da Central de Configurações. -->
                         <!-- V3.35 — 13/07/2026 (Rodada 3A): os 4 cartões que existiam aqui (Segurança de
                              Acesso, Itens Excluídos/Lixeira, Checklist de Saúde do App, Aprovação de
                              Orçamentos Altos) foram MOVIDOS pra suas próprias abas na Central de
@@ -16423,86 +16547,11 @@
                             <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px; margin-top:8px;" onclick="adicionarCampoPersonalizadoDef_(state.campoPersonalizadoSubTab||'leads')">+ Adicionar Campo</button>
                         </div>
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Alertas Automáticos do Sistema</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('alertasSistema')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;">
-                                ${ALERTAS_SISTEMA_TOGGLES.slice(0,5).map(function(t){ return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaSis_${t.chave}" onchange="toggleAlertaSistema('${t.chave}', this.checked)"> ${esc(t.label)}</label>`; }).join('')}
-                            </div>
-                            <div id="alertasSimplesExtra" style="display:none; flex-direction:column; gap:6px; margin-bottom:8px;">
-                                ${ALERTAS_SISTEMA_TOGGLES.slice(5).map(function(t){ return `<label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaSis_${t.chave}" onchange="toggleAlertaSistema('${t.chave}', this.checked)"> ${esc(t.label)}</label>`; }).join('')}
-                            </div>
-                            ${ALERTAS_SISTEMA_TOGGLES.length > 5 ? `<button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px;" id="btnToggleAlertasSimples" onclick="toggleListaAvancada('alertasSimplesExtra','btnToggleAlertasSimples', ${ALERTAS_SISTEMA_TOGGLES.length})">Mostrar todos (${ALERTAS_SISTEMA_TOGGLES.length})</button>` : ''}
-                        </div>
+                        <!-- V3.39 -- 13/07/2026 (Rodada 4, 3E): cartões "Alertas Automáticos do Sistema" e
+                             "Alertas Personalizáveis (prazo/limite)" REMOVIDOS daqui -- migrados pra aba
+                             "Alertas" da Central de Configurações (evita ids duplicados no DOM). -->
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Alertas Personalizáveis (prazo/limite)</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('alertasLimite')">${ICON_AJUDA_SVG_14}</button></div>
-                            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:8px;">
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaPrestacaoContas" onchange="toggleAlertaSistema('alertaPrestacaoContasCultural', this.checked)"> Prestação de Contas a vencer</label>
-                                    <span style="color:var(--text-secondary);">— avisar com</span>
-                                    <input type="number" min="0" class="input-element" id="settAlertaPrestacaoContasDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaCulturalDias_('alertaPrestacaoContasCulturalDias', this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaEditalResultado" onchange="toggleAlertaSistema('alertaEditalResultado', this.checked)"> Resultado de Edital se aproximando</label>
-                                    <span style="color:var(--text-secondary);">— avisar</span>
-                                    <input type="text" class="input-element" id="settAlertaEditalResultadoDias" style="width:140px; padding:4px 8px;" placeholder="15,10,5,0" onchange="salvarAlertaCulturalDias_('alertaEditalResultadoDias', this.value)">
-                                    <span style="color:var(--text-secondary);">dias antes (vírgula; 0 = no dia)</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaConcentracaoCliente" onchange="toggleAlertaSistema('alertaConcentracaoCliente', this.checked)"> Concentração de cliente acima do limite (12 meses)</label>
-                                    <span style="color:var(--text-secondary);">— avisar acima de</span>
-                                    <input type="number" min="1" max="100" class="input-element" id="settAlertaConcentracaoClienteLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaConcentracaoLimite_(this.value)">
-                                    <span style="color:var(--text-secondary);">% da receita</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaNpsBaixo" onchange="toggleAlertaSistema('alertaNpsBaixo', this.checked)"> Nota de NPS abaixo do limite</label>
-                                    <span style="color:var(--text-secondary);">— avisar abaixo de</span>
-                                    <input type="number" min="0" max="10" step="0.5" class="input-element" id="settAlertaNpsBaixoLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaNpsBaixoLimite_(this.value)">
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaDescontoAlto" onchange="toggleAlertaSistema('alertaDescontoAlto', this.checked)"> Desconto acima do normal em proposta</label>
-                                    <span style="color:var(--text-secondary);">— avisar acima de</span>
-                                    <input type="number" min="0" max="100" class="input-element" id="settAlertaDescontoAltoLimite" style="width:60px; padding:4px 8px;" onchange="salvarAlertaDescontoAltoLimite_(this.value)">
-                                    <span style="color:var(--text-secondary);">%</span>
-                                </div>
-                            </div>
-                            <div id="alertasLimiteExtra" style="display:none; flex-direction:column; gap:10px; margin-bottom:8px;">
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaReajusteRecorrente" onchange="toggleAlertaSistema('alertaReajusteRecorrente', this.checked)"> Reajuste de cliente recorrente vencido</label>
-                                    <span style="color:var(--text-secondary);">— avisar com</span>
-                                    <input type="number" min="0" class="input-element" id="settAlertaReajusteRecorrenteDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaReajusteRecorrenteDias_(this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaObjetivoParado" onchange="toggleAlertaSistema('alertaObjetivoParado', this.checked)"> Objetivo do Mês parado (sem incremento)</label>
-                                    <span style="color:var(--text-secondary);">— avisar depois de</span>
-                                    <input type="number" min="1" class="input-element" id="settAlertaObjetivoParadoDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaObjetivoParadoDias_(this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) sem registro</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaEntradaSemNF" onchange="toggleAlertaSistema('alertaEntradaSemNF', this.checked)"> Entrada paga sem Nota Fiscal emitida</label>
-                                    <span style="color:var(--text-secondary);">— avisar depois de</span>
-                                    <input type="number" min="0" class="input-element" id="settAlertaEntradaSemNFDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaEntradaSemNFDias_(this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) da Data de Pagamento</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaNpsSolicitar" onchange="toggleAlertaSistema('alertaNpsSolicitar', this.checked)"> Pedir pesquisa de NPS após a entrega</label>
-                                    <span style="color:var(--text-secondary);">— avisar</span>
-                                    <input type="number" min="0" class="input-element" id="settAlertaNpsSolicitarDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaNpsSolicitarDias_(this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) após "Entregue"</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px;">
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settAlertaManutencaoEquipamento" onchange="toggleAlertaSistema('alertaManutencaoEquipamento', this.checked)"> Manutenção preventiva de equipamento se aproximando</label>
-                                    <span style="color:var(--text-secondary);">— avisar com</span>
-                                    <input type="number" min="0" class="input-element" id="settAlertaManutencaoEquipamentoDias" style="width:60px; padding:4px 8px;" onchange="salvarAlertaManutencaoEquipamentoDias_(this.value)">
-                                    <span style="color:var(--text-secondary);">dia(s) de antecedência</span>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-secondary" style="font-size:11px; padding:5px 12px;" id="btnToggleAlertasLimite" onclick="toggleListaAvancada('alertasLimiteExtra','btnToggleAlertasLimite', 10)">Mostrar todos (10)</button>
-                        </div>
-
-                        <!-- V3.37 -- 13/07/2026 (Rodada 4, 3C): card "Integração com Firestore" (campo
+                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
                              settFirestoreEmpresaId) REMOVIDO daqui -- migrado pra aba "Integração" da
                              Central de Configurações (evita 2 elementos com o mesmo id no DOM). -->
 
@@ -16553,7 +16602,7 @@
         const AJUDA_CONFIG_AVANCADA_ = {
             backend: { titulo: 'Backend (.gs)', corpo: '<p>Copia o código completo do Apps Script (.gs) desta versão do app, pra colar direto no editor de Extensões &gt; Apps Script da planilha — útil pra atualizar uma instalação já existente pra uma versão mais nova, sem precisar do arquivo .gs separado.</p>' },
             retrySync: { titulo: 'Sincronização — Tentativa Automática', corpo: '<p>Quando ativado, se uma leitura ou gravação no Firestore falhar por uma instabilidade pontual de rede, o app tenta de novo sozinho até 3 vezes (com uma pequena espera crescente entre cada tentativa) antes de desistir e avisar.</p><p>Vem desativado por padrão — em conexões normais isso raramente é necessário; ative se você notar falhas de sincronização frequentes numa rede instável.</p>' },
-            alertasSistema: { titulo: 'Alertas Automáticos do Sistema', corpo: '<p>Avisos que o sino do topo gera sozinho, sem você precisar cadastrar nada — ligue ou desligue cada um individualmente. Os Alertas Proativos personalizados (cadastrados em Configurações da Empresa) e o card "Demandas" no Resumo não são afetados por aqui.</p>' },
+            alertasSistema: { titulo: 'Alertas Automáticos do Sistema', corpo: '<p>Avisos que o sino do topo gera sozinho, sem você precisar cadastrar nada — ligue ou desligue cada um individualmente. Os Alertas Personalizados (mais abaixo, nesta mesma aba) e o card "Demandas" no Resumo não são afetados por aqui.</p>' },
             aprovacaoOrcamentoAlto: { titulo: 'Aprovação de Orçamentos Altos', corpo: '<p>Quando ativado com um valor limite, propostas/orçamentos acima desse valor ganham uma etapa extra no status: <strong>"Aguardando Aprovação Superior"</strong>, entre "Enviado" e "Aprovado".</p><p>Sair dessa etapa direto pra "Aprovado" pede uma confirmação explícita — é uma trava a mais pra ninguém aprovar sem querer um orçamento de valor alto só clicando rápido demais no status.</p><p>Desativado por padrão. Sem um valor limite preenchido, nenhum orçamento é afetado mesmo com o toggle ligado.</p>' },
             camposPersonalizados: { titulo: 'Campos Personalizados', corpo: '<p>Crie colunas extras pra Leads, Clientes ou Projetos — coisas específicas do seu negócio que o Aranuz não previu de fábrica (ex: "Número do Processo", "Canal de Origem Interno", "Cor da Marca do Cliente").</p><p>4 tipos disponíveis: Texto, Número, Data e Lista de Opções (você define as opções, separadas por vírgula). Depois de criado, o campo aparece automaticamente no formulário de cadastro/edição correspondente.</p><p>Remover um campo aqui só tira ele da tela — não apaga o que já foi preenchido nos registros antigos com ele.</p>' },
             emailsAlertas: { titulo: 'E-mails e Alertas', corpo: '<p>3 recursos independentes, todos <strong>desativados por padrão</strong>:</p><p><strong>Alertas Críticos por E-mail:</strong> manda por e-mail os mesmos avisos que já aparecem no sino do topo (Alertas Automáticos do Sistema) — cada alerta só é enviado uma vez. Funciona a partir do momento em que alguém tem o app aberto quando o alerta é detectado.</p><p><strong>Resumo Semanal por E-mail:</strong> toda segunda-feira de manhã, mesmo sem ninguém abrir o app — precisa da URL da API (Apps Script Web App) configurada em Configurações do App, porque quem manda esse e-mail é o próprio backend, sozinho.</p><p><strong>Relatório Financeiro Agendado:</strong> igual ao Resumo Semanal, mas focado em entradas/saídas/saldo, na frequência que você escolher (semanal ou mensal, todo dia 1º).</p><p>"Destinatários" aceita mais de um e-mail separado por vírgula (se vazio, usa o E-mail cadastrado em Configurações da Empresa). "Nome do remetente" é só o nome de exibição — o endereço técnico real de envio é sempre o Gmail/Workspace por trás do Apps Script, não pode ser trocado por aqui.</p>' },
