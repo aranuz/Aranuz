@@ -1,6 +1,8 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_32.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_33.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.33 — 13/07/2026 (Rodada 1): só pareamento de versão com o App — nenhuma mudança funcional neste
+ * arquivo nesta rodada (os itens da Rodada 1 foram todos de front-end: Home, App e Admin).
  * V3.28 — 13/07/2026 (Rodada 1): referência de pareamento acima corrigida (estava citando um App bem
  * antigo, V2.100) e versão realinhada com o App (ver BACKEND_VERSION mais abaixo).
  * Novidades v10 (V102):
@@ -273,7 +275,9 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.32"; // V3.32 — 13/07/2026 (Rodada 3B): só pareamento — Auditoria/Logs desta
+var BACKEND_VERSION = "3.33"; // V3.33 — 13/07/2026 (Rodada 1): só pareamento — mudanças desta rodada
+// (idioma do e-mail, tema claro, onboarding, ícone de ajuda, limpeza de marca) foram todas de front-end.
+// V3.32 — 13/07/2026 (Rodada 3B): só pareamento — Auditoria/Logs desta
 // rodada vive inteiramente no Admin/Firestore, nenhuma mudança na planilha/GS.
 // 3.17 — 13/07/2026: Bloco 3 (E-mails e Alertas) — Alertas Críticos por
 // E-mail (enviarEmailGenerico, disparado pelo front-end), Resumo Semanal e Relatório Financeiro

@@ -300,6 +300,12 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); align-items: center; justify-content: center; z-index: 1000; }
         .modal-view { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; box-shadow: 0 16px 40px rgba(0,0,0,0.12); width: 500px; max-height: 90vh; overflow-y: auto; contain: layout style paint; will-change: transform; transform: translateZ(0); }
         .modal-view.large { width: 900px; max-width: 95vw; }
+        /* V3.33 — 13/07/2026 (Rodada 1): Janela de Boas Vindas com tamanho FIXO (não muda mais de
+           altura a cada etapa) — conteúdo de cada etapa rola por dentro (.onb-step-body), o rodapé com
+           os botões fica sempre na mesma posição. */
+        #modalOnboardingOverlay .modal-view { height: 620px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        #onboardingBody .onb-step-body { flex: 1 1 auto; overflow-y: auto; padding-right: 4px; }
+        #onboardingBody .onb-footer { flex-shrink: 0; }
         /* V179: o modal de Projeto (Editar/Novo) não deve mudar de tamanho conforme o conteúdo de cada
            aba — altura FIXA (não só um teto), com cada aba rolando internamente (ver .modal-tab-content
            dentro dele, que já usa max-height/overflow-y próprios). */
@@ -1936,7 +1942,8 @@
 
             <div style="text-align:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">
                 <div style="font-size:18px; font-weight:800; color:var(--text-primary);">Aranuz Workspace</div>
-                <div id="settVersionInfo" onclick="registrarCliqueDebug()" style="font-size:12px; color:var(--text-secondary); margin-top:4px; cursor:default; user-select:none;" title="Clique 3 vezes seguidas para abrir o painel de diagnóstico">Versão <span id="settVersionNum"></span> · © Mang Film. <span id="settVersionYear"></span> <span id="settBackendVersionInfo" style="color:var(--text-muted);"></span></div>
+                <!-- V3.33 -- 13/07/2026 (Rodada 1): BUGFIX -- este rodapé mostrava "© Mang Film." fixo, visível pra todo usuário; trocado por "© Aranuz.", igual ao rodapé da barra lateral (linha ~574). -->
+                <div id="settVersionInfo" onclick="registrarCliqueDebug()" style="font-size:12px; color:var(--text-secondary); margin-top:4px; cursor:default; user-select:none;" title="Clique 3 vezes seguidas para abrir o painel de diagnóstico">Versão <span id="settVersionNum"></span> · © Aranuz. <span id="settVersionYear"></span> <span id="settBackendVersionInfo" style="color:var(--text-muted);"></span></div>
             </div>
 
             <div class="modal-buttons-row" style="justify-content:center;">
@@ -2202,8 +2209,10 @@
             setTimeout(() => location.reload(), 300);
         }
         function _onboardingFooter_() {
+            // V3.33 — 13/07/2026 (Rodada 1): botões agora alinhados à direita (justify-content:flex-end)
+            // e o rodapé ganhou a classe .onb-footer, que fica fixa embaixo do modal de tamanho fixo.
             const step = state.onboardingStep || 1;
-            return '<div style="display:flex; gap:12px; margin-top:28px;">'
+            return '<div class="onb-footer" style="display:flex; gap:12px; justify-content:flex-end; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">'
                 + (step > 1 ? '<button class="btn-secondary" onclick="onboardingVoltar()">&larr; voltar</button>' : '')
                 + '<button class="btn-primary" style="background:var(--accent-blue);" onclick="onboardingAvancar()">' + (step < 4 ? 'avançar &rarr;' : 'Concluir') + '</button>'
                 + '</div>';
@@ -2255,8 +2264,10 @@
                     + '</div>'
                     + '<div style="border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:10px;">'
                     + '<div style="font-size:13px; font-weight:700; margin-bottom:6px;">🛠 Quer personalizar mais?</div>'
-                    + '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.5;">Em Configurações do App &gt; Configurações Avançadas você ajusta alertas automáticos, etapas e categorias, personalização de contratos, backup e muito mais.</div>'
-                    + '<button type="button" class="btn-secondary" onclick="fecharOnboarding(); openAppConfigModal(); abrirAppConfigAvancado();">Ver Configurações Avançadas</button>'
+                    // V3.33 — 13/07/2026 (Rodada 1): removido o acesso direto às Configurações Avançadas por
+                    // aqui (a Janela de Boas Vindas não deve mais linkar pra essa página — ela será
+                    // descontinuada nas próximas rodadas, com tudo migrando pra Central de Configurações).
+                    + '<div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">A qualquer momento, clique no ícone de engrenagem (⚙) no topo do app para ajustar alertas automáticos, etapas e categorias, personalização de contratos, backup e muito mais.</div>'
                     + '</div>'
                     + '<div style="border:1px solid var(--border-color); border-radius:10px; padding:14px;">'
                     + '<div style="font-size:13px; font-weight:700; margin-bottom:6px;">❔ Ficou com dúvida em alguma ferramenta?</div>'
@@ -2264,7 +2275,7 @@
                     + '<button type="button" class="btn-secondary" onclick="fecharOnboarding(); switchTab(\'manual-uso\');">Ver Manual do App</button>'
                     + '</div>';
             }
-            body.innerHTML = html + _onboardingFooter_();
+            body.innerHTML = '<div class="onb-step-body">' + html + '</div>' + _onboardingFooter_();
         }
         // V243: sai da conta e limpa o CACHE LOCAL de dados (mang_db) — importante pra não misturar dados
         // de uma empresa com os de outra, caso outro usuário faça login neste mesmo dispositivo depois.
@@ -3558,7 +3569,13 @@
         // mesma unificacao/alteracao - precisam do arquivo pra eu aplicar.
         // V3.32 — 13/07/2026 (Rodada 3B): só pareamento de versão — Auditoria/Logs desta rodada vive
         // inteiramente no Admin/Firestore, nenhuma mudança no App.
-        const FRONTEND_VERSION = '3.32';
+        // V3.33 — 13/07/2026 (Rodada 1, pedidos do cliente): (1) tema volta a abrir sempre no claro por
+        // padrão (não segue mais o SO); (2) BUGFIX — ícone de ajuda ${ICON_AJUDA_SVG_14} aparecia escrito
+        // na tela em vez do SVG; (3) Janela de Boas Vindas: tamanho fixo (não muda mais por etapa), botões
+        // voltar/avançar alinhados à direita, removido o link direto pra Configurações Avançadas na etapa
+        // final; (4) limpeza de resíduos de marca antiga (Mang Film/Marangatu Filmes) em textos/comentários
+        // fora do ID técnico de empresa (esse ainda pendente — ver FB_EMPRESA_ID).
+        const FRONTEND_VERSION = '3.33';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -4683,7 +4700,10 @@
         // V3.24 -- Bloco 6: ícone de "Ajuda" (círculo com "?") consolidado numa única constante -- se
         // repetia ~18x como markup SVG idêntico dentro de renderConfigAvancadaPage(); qualquer ajuste
         // futuro no ícone agora é feito num só lugar.
-        const ICON_AJUDA_SVG_14 = '${ICON_AJUDA_SVG_14}';
+        // V3.33 -- 13/07/2026 (Rodada 1): BUGFIX -- a constante estava definida como o texto literal
+        // "${ICON_AJUDA_SVG_14}" (nunca recebeu o SVG de verdade), por isso aparecia escrito na tela em
+        // vez do ícone. Agora usa o mesmo desenho (círculo com "?") já usado nos botões de ajuda de campo.
+        const ICON_AJUDA_SVG_14 = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>';
         function esc(s) { if(typeof s !== 'string') return s; return s.replace(/[&<>"']/g, c => _escMap[c]); }
         // ====== V3.22 -- Bloco 6: paginação client-side de listas grandes ======
         // Helper genérico -- recebe a lista já filtrada/ordenada (pronta pra exibir) e devolve só a
@@ -6570,16 +6590,15 @@
         function clearNotifs() { state.notifications = []; saveNotifs(); updateBell(); const p = document.getElementById('notifPanel'); if(p) p.innerHTML = renderNotifList(); }
 
         /* === THEME TOGGLE (dark/light) === */
-        // V3.17 — item 24 da lista de robustez: o tema agora acompanha automaticamente a preferência do
-        // sistema operacional (claro/escuro) até a pessoa escolher manualmente pelo botão — a partir daí,
-        // a escolha manual "gruda" (mhub_theme_manual) e o app para de seguir o SO sozinho, pra não trocar
-        // o tema embaixo do usuário depois de uma escolha explícita dele.
+        // V3.33 — 13/07/2026 (Rodada 1): REVERTIDO o comportamento da V3.17 — o app não deve mais
+        // acompanhar automaticamente o tema do sistema operacional. Agora SEMPRE abre no claro por
+        // padrão; só muda se a pessoa escolher manualmente pelo botão (aí a escolha "gruda" em
+        // mhub_theme, do jeito que já funcionava para quem trocasse manualmente).
         function toggleTheme() {
             const current = document.documentElement.getAttribute('data-theme') || 'light';
             const next = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', next);
             localStorage.setItem('mhub_theme', next);
-            localStorage.setItem('mhub_theme_manual', '1');
             updateThemeIcons(next);
         }
         function updateThemeIcons(theme) {
@@ -6588,21 +6607,9 @@
             if(sun && moon) { sun.style.display = theme === 'dark' ? 'block' : 'none'; moon.style.display = theme === 'dark' ? 'none' : 'block'; }
         }
         (function initTheme() {
-            const escolhaManual = localStorage.getItem('mhub_theme_manual') === '1';
-            const prefereSistemaEscuro = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            const saved = escolhaManual ? (localStorage.getItem('mhub_theme') || 'light') : (prefereSistemaEscuro ? 'dark' : 'light');
+            const saved = localStorage.getItem('mhub_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             document.addEventListener('DOMContentLoaded', () => updateThemeIcons(saved));
-            if (!escolhaManual && window.matchMedia) {
-                try {
-                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(ev) {
-                        if (localStorage.getItem('mhub_theme_manual') === '1') return; // escolheu manualmente nesse meio tempo
-                        const novoTema = ev.matches ? 'dark' : 'light';
-                        document.documentElement.setAttribute('data-theme', novoTema);
-                        updateThemeIcons(novoTema);
-                    });
-                } catch(e) {}
-            }
         })();
 
         function showStickyToast(text) {
@@ -9211,7 +9218,7 @@
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Enquanto o "ID da Empresa (Firebase)" não for preenchido, a gravação no Firestore fica desligada (fail-safe) — a planilha Sheets continua recebendo os 3 formulários normalmente, exatamente como antes desta versão. Nada quebra se você ainda não tiver feito a configuração acima.</p>
                 <p style="color:#dc2626; font-weight:600; font-size:12px;">⚠️ Falta ainda a parte 2 do Bloco 4: recriar o formulário de contato do site, conectado ao Firestore com captcha anti-spam.</p>` },
             { icone: '🆕', titulo: '31. Formulário de Contato do Site (Bloco 4, parte 2, ÚLTIMA — V2.74)', corpo: `
-                <p>Novo formulário público — <strong>formularioContatoSite.html</strong> (arquivo novo, publique do mesmo jeito que os outros 3: Implantar como app da Web, acesso "Qualquer pessoa"). Segue o mesmo padrão visual da Mang Film (tema claro/escuro, mesma fonte e cores) dos formulários de Cadastro de Clientes, Fornecedores e NPS já existentes.</p>
+                <p>Novo formulário público — <strong>formularioContatoSite.html</strong> (arquivo novo, publique do mesmo jeito que os outros 3: Implantar como app da Web, acesso "Qualquer pessoa"). Segue o mesmo padrão visual do Aranuz (tema claro/escuro, mesma fonte e cores) dos formulários de Cadastro de Clientes, Fornecedores e NPS já existentes.</p>
                 <p>Campos: Nome, E-mail, WhatsApp/Telefone, Empresa (opcional) e Mensagem. Ao enviar, entra como um <strong>Lead novo</strong> em Leads e Oportunidades — já na etapa "No Radar" e com Origem do Lead "Site". O Alerta Automático do Sistema "Novo lead com origem site" (já existente) avisa no sino assim que alguém preenche.</p>
                 <p><strong>Proteção anti-spam:</strong> Google reCAPTCHA v3 (invisível — não pede quebra-cabeça pra quem preenche) conferido no servidor, mais um campo-armadilha (honeypot) escondido. Pra funcionar, precisa configurar duas chaves gratuitas, criadas uma única vez em <a href="https://www.google.com/recaptcha/admin" target="_blank">google.com/recaptcha/admin</a> (escolha reCAPTCHA v3, cadastre o domínio onde o formulário vai ficar publicado):</p>
                 <p>1) A <strong>Site Key</strong> vai no arquivo formularioContatoSite.html, em dois lugares (procure por "COLE_AQUI_SUA_SITE_KEY": a tag <code>&lt;script src="...recaptcha/api.js?render=..."&gt;</code> e a constante RECAPTCHA_SITE_KEY).</p>
@@ -9288,7 +9295,8 @@
                 <p><strong>Clientes</strong> (Visualização em Grade): o nome do cliente ficava por baixo dos badges "Cliente Final/Agência" e "Ativo/Inativo" quando o nome da empresa era mais longo — corrigido, os badges agora ficam numa linha própria, acima do nome.</p>` },
             { icone: '🆕', titulo: '47. Portal do Cliente — Fase 1: convite de acesso (V2.91)', corpo: `
                 <p>Primeira parte do <strong>Portal do Cliente</strong> — um acesso próprio, fora deste painel interno, pra cada cliente acompanhar os projetos dele (o painel de verdade vem na Fase 2).</p>
-                <p>Nova aba <strong>Portal do Cliente</strong> dentro do cadastro do Cliente (Clientes &gt; abrir um cliente): informe o e-mail e clique em "Convidar para o Portal do Cliente" — o acesso já fica liberado na hora. A pessoa só precisa acessar o link do Portal (arquivo separado, <code>MangFilm_PortalCliente.html</code>) e criar uma senha pra esse mesmo e-mail. Dá pra revogar o acesso a qualquer momento, na mesma aba.</p>
+                <p>Nova aba <strong>Portal do Cliente</strong> dentro do cadastro do Cliente (Clientes &gt; abrir um cliente): informe o e-mail e clique em "Convidar para o Portal do Cliente" — o acesso já fica liberado na hora. A pessoa só precisa acessar o link do Portal do Cliente (arquivo separado) e criar uma senha pra esse mesmo e-mail. Dá pra revogar o acesso a qualquer momento, na mesma aba.</p>
+                <!-- V3.33 -- 13/07/2026 (Rodada 1): removida a referência ao nome de arquivo antigo (MangFilm_PortalCliente.html) deste texto -- se esse arquivo de portal separado ainda existir com esse nome, me envie pra eu renomear também. -->
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Por enquanto o Portal só mostra uma tela de boas-vindas depois do login — o painel com os projetos (etapa, entregáveis, prazo, financeiro) e o pedido de alteração chegam na Fase 2.</p>` },
             { icone: '🆕', titulo: '48. Simplificação: fim do Custom Claim externo (V2.92)', corpo: `
                 <p>O mecanismo de "Custom Claim" (que dependia de um script separado, nunca configurado de verdade) foi removido. As Regras de Segurança do Firestore agora conferem o acesso de cada empresa direto no cadastro do usuário — mesmo nível de proteção, um sistema a menos pra dar problema.</p>
@@ -9316,8 +9324,15 @@
                 <p>Em <strong>Editar Fornecedor</strong>, as seções "Documentos" (CPF/RG) e "Pagamento" (Informação para Pagamento) subiram para logo após "Identificação" — antes ficavam só perto do fim do formulário.</p>
                 <p>O campo <strong>CEP</strong> deixou de existir separado — agora faz parte do próprio campo "Endereço completo", que passou a pedir rua, número, bairro, complemento e CEP num único texto. Fornecedores já cadastrados foram atualizados automaticamente na primeira abertura do app após esta versão: o CEP antigo foi anexado ao final do texto de Endereço de cada um, sem perder nenhum dado.</p>
                 <p>O modelo de planilha da <strong>Importação em Massa</strong> (Configurações do App > Importação em Massa > aba "Fornecedores") também foi atualizado — a coluna "CEP" foi removida do modelo; quem for reimportar deve baixar o modelo novo desta versão para o cabeçalho não ser recusado pela validação automática.</p>
-                <p style="color:var(--text-secondary); font-size:12px;">💡 Pendente: o formulário público de cadastro de Fornecedor (arquivo separado, ainda não enviado) segue com o CEP em campo próprio — precisa da mesma unificação quando esse arquivo for enviado.</p>` }
-                ];
+                <p style="color:var(--text-secondary); font-size:12px;">💡 Pendente: o formulário público de cadastro de Fornecedor (arquivo separado, ainda não enviado) segue com o CEP em campo próprio — precisa da mesma unificação quando esse arquivo for enviado.</p>` },
+            // V3.33 — 13/07/2026 (Rodada 1): novo tópico 58 — o Manual ficou parado desde a V3.08; este é o
+            // primeiro passo pra retomar a documentação (ver observação ao cliente sobre backfill V3.09–V3.32).
+            { icone: '🆕', titulo: '58. Tema sempre claro por padrão, Boas Vindas com tamanho fixo e limpeza de marca (V3.33)', corpo: `
+                <p><strong>Tema (claro/escuro):</strong> o app agora sempre abre no tema <strong>claro</strong> por padrão, independente da preferência do sistema operacional — a pessoa continua podendo trocar manualmente pelo ícone de sol/lua, e essa escolha manual continua sendo lembrada nos próximos acessos.</p>
+                <p><strong>Janela de Boas Vindas (guia inicial):</strong> agora tem tamanho fixo — não cresce nem encolhe mais ao trocar de etapa — e os botões "voltar"/"avançar" ficam alinhados à direita, num rodapé fixo. O acesso direto às Configurações Avançadas pela última etapa foi removido (agora só orienta a usar o ícone de engrenagem no topo).</p>
+                <p><strong>Correção:</strong> o ícone de ajuda (círculo com "?") que aparecia como texto bugado <code>\${ICON_AJUDA_SVG_14}</code> em várias caixas de Configurações Avançadas foi corrigido.</p>
+                <p><strong>Limpeza de marca:</strong> removidas referências residuais a "Mang Film"/"Marangatu Filmes" que ainda apareciam em alguns textos e no rodapé de Configurações do App (mostrava "© Mang Film." fixo — agora mostra "© Aranuz.").</p>` }
+            ];
         function toggleManualTopico(i) {
             const el = document.getElementById('manualTopico'+i);
             if(el) el.classList.toggle('hidden');
@@ -11540,7 +11555,9 @@
         // renderClientePortalTab() acima): coleção nova "fornecedoresAcesso"
         // (empresas/{empresaId}/fornecedoresAcesso/{emailDoFornecedor}), gravada direto pelo navegador do
         // TIME (já tem permissão ampla em empresas/{empresaId}/**). Acesso nasce liberado ao convidar; o
-        // fornecedor só cria uma senha pra esse e-mail no link do Portal (MangFilm_PortalFornecedor.html).
+        // fornecedor só cria uma senha pra esse e-mail no link do Portal (arquivo separado — V3.33:
+        // referência ao nome antigo MangFilm_PortalFornecedor.html removida deste comentário; se esse
+        // arquivo ainda existir com esse nome, envie pra eu renomear também).
         async function renderFornecedorPortalTab(id, f) {
             const area = document.getElementById('fornecedorPortalStatusArea');
             if(!area) return;
@@ -27836,9 +27853,11 @@
             'termo_producao','trecho_edital','nome_operacional',
             'BLOCO_TIPO_CONTRATACAO','BLOCO_TRANSPORTE','BLOCO_SIGILO'
         ];
-        // Modelo pré-carregado de Contrato de Locação de Equipamentos, já revisado (V58): LOCADOR fixo
-        // (Marangatu Filmes e Produções / Mang Film), LOCATÁRIO variável (dados do Cliente), cláusula de
-        // caução/garantia flexível, cancelamento bilateral, força maior, sem testemunhas (assinatura digital).
+        // Modelo pré-carregado de Contrato de Locação de Equipamentos, já revisado (V58): LOCADOR usa os
+        // campos da própria empresa contratada ({{contratado_razao_social}}/{{contratado_nome_fantasia}},
+        // preenchidos em Configurações da Empresa — V3.33 removeu a menção a marca antiga fixa deste
+        // comentário), LOCATÁRIO variável (dados do Cliente), cláusula de caução/garantia flexível,
+        // cancelamento bilateral, força maior, sem testemunhas (assinatura digital).
         const CONTRATO_SEED_LOCACAO = [
             'CONTRATO DE LOCAÇÃO DE EQUIPAMENTOS',
             '',
@@ -31790,11 +31809,15 @@
                     '</tbody></table></div>';
             }
             // Marca e informações de contato variam conforme a categoria do contrato: produções de cinema
-            // assinam como "Marangatu Filmes"; as demais produções (comercial, institucional, publicitário)
-            // assinam como "Mang Film" — mesma empresa, duas marcas com vida própria.
+            // assinam com o Nome Fantasia Alternativo (nomeMarcaAlternativa()); as demais produções
+            // (comercial, institucional, publicitário) assinam com o Nome Fantasia normal — ambos vêm de
+            // Configurações da Empresa > Identidade, cada empresa define os seus.
+            // V3.33 — 13/07/2026 (Rodada 1): removida a última referência fixa a domínio de marca antiga
+            // (era 'www.marangatufilmes.com.br') — agora usa sempre o Site cadastrado em Configurações da
+            // Empresa, com o Aranuz como retaguarda só se o campo estiver vazio.
             const ehCinema = categoria === 'cinema';
             const nomeMarca = ehCinema ? ''+nomeMarcaAlternativa()+'' : ''+nomeMarcaPrincipal()+'';
-            const siteMarca = ehCinema ? 'www.marangatufilmes.com.br' : 'aranuz.com/app';
+            const siteMarca = getLink('siteEmpresa') || 'aranuz.com';
             // Rodapé com marca/contato removido a pedido — depois de duas tentativas (topo e rodapé fixo por
             // página), o posicionamento não renderizava de forma confiável entre navegadores/versões. Se no
             // futuro quiserem essa informação de volta, o caminho mais confiável é gerar o PDF via biblioteca

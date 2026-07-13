@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Aranuz · Painel de Administração</title>
+<!-- V3.33 — 13/07/2026 (Rodada 1, pedido do cliente): "Reenviar redefinição de senha" agora força
+     auth.languageCode='pt-BR' antes de enviar — o e-mail sai em português. O ENDEREÇO do remetente
+     (noreply@aranuz-6c80c.firebaseapp.com) continua igual — só é ajustável no Console do Firebase. -->
 <!-- V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): "Tentativas de Acesso Negadas" e "Log de Acesso
      Geral" viraram UMA "Central de Auditoria" só, misturando eventos de usuário + resets + exclusões +
      tentativas negadas, com filtro por empresa, busca e exportação CSV. Novo card "Retenção de Logs"
@@ -934,6 +937,11 @@
     if (!email) { alert('Não foi possível encontrar o e-mail deste usuário.'); return; }
     if (!confirm('Enviar e-mail de redefinição de senha para ' + email + '?')) return;
     try {
+      // V3.33 — 13/07/2026 (Rodada 1): força o e-mail a sair em português (o Firebase manda em inglês
+      // por padrão, a menos que o idioma seja indicado explicitamente). O ENDEREÇO do remetente
+      // (noreply@aranuz-6c80c.firebaseapp.com) continua o mesmo — isso só é ajustável no Console do
+      // Firebase (Authentication > Templates), não pelo SDK do navegador.
+      auth.languageCode = 'pt-BR';
       await auth.sendPasswordResetEmail(email);
       alert('E-mail de redefinição de senha enviado para ' + email + '.');
     } catch (e) { alert('Erro ao enviar: ' + (e && e.message || e)); }
