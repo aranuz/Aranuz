@@ -172,7 +172,12 @@
         /* V3.27 — Bloco 12: toggle estilo Claude (aplicado nos checkboxes de Gerenciar Seções do Menu).
            Puramente visual — o input continua sendo um checkbox normal (mesmo onchange, mesmo comportamento). */
         input.chk-toggle-claude { appearance: none; -webkit-appearance: none; -moz-appearance: none; position: relative; width: 38px; height: 22px; min-width: 38px; border-radius: 22px; background: #ccc; cursor: pointer; outline: none; transition: background .2s; vertical-align: middle; margin: 0; flex-shrink: 0; }
-        input.chk-toggle-claude:checked { background: var(--accent-primary); }
+        /* V3.45 — 13/07/2026 (Rodada 4, item 12): bugfix real — "--accent-primary" nunca existiu em
+           nenhum tema (:root/[data-theme]), então virava transparente/nada; era por isso que este toggle
+           quando LIGADO, o botão de tema claro/escuro quando escuro, e o item selecionado da Central de
+           Configurações abaixo ficavam sem nenhuma cor de destaque (se misturando com o fundo). Trocado
+           pelo mesmo azul (--accent-blue) já usado em todo o resto do app pra estado "ativo/selecionado". */
+        input.chk-toggle-claude:checked { background: var(--accent-blue); }
         input.chk-toggle-claude::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
         input.chk-toggle-claude:checked::after { left: 18px; }
         input.chk-toggle-claude:disabled { opacity: .4; cursor: not-allowed; }
@@ -318,6 +323,10 @@
            Projetos — pedido do cliente ("mesmo tamanho da janela de cadastro de Projetos"). A área de
            abas+conteúdo (.cc-body) ocupa o espaço restante e rola por dentro; título e rodapé ficam fixos. */
         #modalCentralConfigOverlay .modal-view { height: 90vh; display: flex; flex-direction: column; }
+        /* V3.45 — 13/07/2026 (Rodada 4, item 10): largura da Central de Configurações dobrada (900px ->
+           1800px, respeitando o teto de 95vw em telas menores) — pedido do cliente. Sobrescreve só esta
+           janela; o .modal-view.large padrão (900px) continua valendo pras outras janelas "wide". */
+        #modalCentralConfigOverlay .modal-view.large { width: 1800px; max-width: 95vw; }
         #modalCentralConfigOverlay .cc-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; align-items: stretch; }
         #modalCentralConfigOverlay .cc-sidebar { overflow-y: auto; }
         #modalCentralConfigOverlay .cc-content { flex: 1; min-width: 0; overflow-y: auto; }
@@ -582,7 +591,6 @@
     <div id="mhub-portal-publico-overlay"></div>
 
     <div class="sidebar">
-        <div style="text-align:center; font-size:10px; color:var(--sidebar-text-sec); letter-spacing:0.3px; margin-top:-20px; padding-bottom:8px; margin-bottom:26px; border-bottom:1px solid var(--sidebar-border); opacity:0.75;">Aranuz · © 2026</div>
         <div class="sidebar-header" style="flex-direction:column; gap:6px; align-items:center; margin-bottom:20px;">
             <div class="brand-name" id="sidebarBrandName" style="text-align:center; cursor:pointer;" title="Ir para Hoje" onclick="switchTab('visao-geral')">Aranuz</div>
         </div>
@@ -723,17 +731,12 @@
             <div class="submenu-link" data-tab="manual-empresa" onclick="switchTab('manual-empresa', this)">Manual da Empresa</div>
         </div>
 
-        <div class="sidebar-footer">
-            <div class="submenu-link" onclick="switchTab('sys-history', this)">Histórico</div>
-            
-            <div class="submenu-link" onclick="openExportModal()" style="gap: 6px; white-space:nowrap; overflow:hidden;" title="Exportar Dados Brutos (Excel/PDF)">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Dados
-            </div>
-
-            <a href="#" target="_blank" id="sidebarDbLink" class="db-icon" title="Acessar Banco de Dados">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
-            </a>
+        <!-- V3.45 — 13/07/2026 (Rodada 4, item 9): "Aranuz · © {ano}" saiu do topo da barra lateral e
+             passou pra cá, no rodapé, no lugar que Histórico/Dados/ícone da Planilha ocupavam. Os 3 itens
+             deslocados continuam acessíveis dentro de Central de Configurações > Geral > "Atalhos
+             Rápidos" (ver _renderCentralConfig_(), aba 'geral') — nada foi removido, só reorganizado. -->
+        <div class="sidebar-footer" style="justify-content:center;">
+            <div style="text-align:center; font-size:10px; color:var(--sidebar-text-sec); letter-spacing:0.3px; opacity:0.75;">Aranuz · © <span id="sidebarFooterAno"></span></div>
         </div>
     </div>
 <div class="main-wrapper">
@@ -746,6 +749,25 @@
                 <div style="display:flex; align-items:center; gap:8px; padding-right:10px; margin-right:6px; border-right:1px solid var(--border-color);">
                     <span id="headerEmpresaNome" style="font-size:12px; font-weight:600; color:var(--text-secondary); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Empresa logada"></span>
                 </div>
+
+                <!-- V3.45 — 13/07/2026 (Rodada 4, item 11): status de sincronização (Planilha + Firestore)
+                     e a versão do app SÓ aparecem aqui, na barra de menus — saíram de dentro da janela da
+                     Central de Configurações (ver _renderCentralConfig_(), rodapé removido). As duas
+                     bolinhas usam os mesmos ids (syncDot/firestoreSyncDot) que updateSyncUI()/
+                     atualizarStatusFirestoreUI_() já atualizavam sozinhas (guard if(el), sem mudar lógica),
+                     só que agora um elemento de verdade existe pra elas pintarem. -->
+                <div class="sync-status" id="headerSyncStatus" title="Status de sincronização com a nuvem — clique para abrir Configurações" onclick="abrirCentralConfig_('geral')" style="margin-right:10px;">
+                    <span class="sync-dot sync-nunca" id="syncDot"></span>
+                    <span class="sync-dot sync-nunca" id="firestoreSyncDot"></span>
+                    <!-- V3.45 — item 11: o "clique 3x no número da versão abre o Painel de Diagnóstico"
+                         (já documentado no Manual de Uso, tópicos 5 e onboarding do Firestore) tinha ficado
+                         órfão desde que o modal antigo que continha esse rótulo foi removido em rodadas
+                         passadas (registrarCliqueDebug() nunca tinha mais nenhum onclick apontando pra ela).
+                         Como a versão migrou pra cá, o atalho volta a funcionar no mesmo lugar de sempre —
+                         stopPropagation pra não abrir a Central de Configurações junto. -->
+                    <span id="headerVersaoApp" style="font-weight:400; color:var(--text-secondary); cursor:pointer;" title="Versão do app (clique 3x para o Painel de Diagnóstico)" onclick="event.stopPropagation(); registrarCliqueDebug();"></span>
+                </div>
+
                 <select id="headerStageFilter" class="list-stage-select hidden" onchange="handleStageFilter()" style="margin-right: 8px; width: 180px;">
                     <option value="">Todas as Etapas</option>
                 </select>
@@ -1693,10 +1715,11 @@
     <!-- V3.37 -- 13/07/2026 (Rodada 4, Central de Configurações 3C): #modalAppConfigOverlay REMOVIDO -- o
          formulário de Configurações do App virou a aba "Integração" da Central de Configurações (ver
          _renderIntegracaoTabContent_()), sem modal próprio duplicado. Os indicadores de sincronização
-         (syncDot/firestoreSyncDot), a última sincronização e a versão do app SAÍRAM desta tela (pedido do
-         cliente) -- essas informações já vivem no rodapé fixo da própria Central de Configurações (ver
-         _ccRodapeSincronizacao_(), chamada em _renderCentralConfig_()). updateSyncUI()/
-         atualizarStatusFirestoreUI_() continuam seguros de chamar (checam if(el) antes de usar cada id). -->
+         (syncDot/firestoreSyncDot) e a versão do app SAÍRAM desta tela. ATUALIZADO NA V3.45 (Rodada 4,
+         item 11, pedido do cliente): essas informações moraram um tempo no rodapé da própria Central de
+         Configurações, mas agora vivem só na barra de menus (topo da tela, #headerSyncStatus) — nenhuma
+         das duas telas antigas as mostra mais. updateSyncUI()/atualizarStatusFirestoreUI_() continuam
+         seguros de chamar (checam if(el) antes de usar cada id). -->
 
     <!-- V178: Configurações Avançadas virou uma PÁGINA (aba interna), não mais um modal — ver
          renderConfigAvancadaPage() e o registro em _tabRenderers['config-avancada']. -->
@@ -2455,6 +2478,11 @@
         function atualizarLinksEstaticosNaTela() {
             const drv = document.getElementById('sidebarDriveLink'); if(drv) drv.href = getLink('linkDrivePrincipal');
             const dbl = document.getElementById('sidebarDbLink'); if(dbl) dbl.href = getLink('linkPlanilhaDb');
+            // V3.45 — item 9: ano do copyright no rodapé da barra lateral (antes era um "2026" fixo no topo).
+            const anoEl = document.getElementById('sidebarFooterAno'); if(anoEl) anoEl.textContent = new Date().getFullYear();
+            // V3.45 — item 11: versão do app na barra de menus (syncDot/firestoreSyncDot já se atualizam
+            // sozinhos via updateSyncUI()/atualizarStatusFirestoreUI_(), chamadas nos pontos de sempre).
+            const verEl = document.getElementById('headerVersaoApp'); if(verEl) verEl.textContent = 'v' + FRONTEND_VERSION;
         }
         // URL pública onde o formulário de Pesquisa de Satisfação (NPS_Pesquisa_Satisfacao.html) está hospedado.
         function abrirPesquisaSatisfacao() {
@@ -3404,7 +3432,19 @@
         // l.contatosAdicionais, sincronizado com Firebase e Planilha (ver GS V3.44).
         // Regras de segurança do Firestore: leitura/criação de 'alertasEmailEnviados' agora exige que o
         // empresaId do documento pertença à empresa do usuário autenticado (evita exposição entre contas).
-        const FRONTEND_VERSION = '3.44';
+        // V3.45 — 13/07/2026 (Rodada 4, Configurações Gerais — itens 9 a 12): (1) "Aranuz · © {ano}" saiu
+        // do topo da barra lateral e foi para o rodapé, no lugar de Histórico/Dados/ícone da Planilha —
+        // os 3 continuam acessíveis em Central de Configurações > Geral > Atalhos Rápidos; (2) largura da
+        // Central de Configurações dobrada (900px -> 1800px); (3) status de sincronização (Planilha +
+        // Firestore) e versão do app agora só aparecem na barra de menus (#headerSyncStatus), removidos
+        // de dentro da janela da Central de Configurações — como bônus, o clique 3x na versão pra abrir o
+        // Painel de Diagnóstico (que estava órfão desde a remoção de um modal antigo) volta a funcionar
+        // no mesmo lugar; (4) bugfix real: a aba selecionada da Central de Configurações usava a variável
+        // CSS "--accent-primary", que nunca existiu em nenhum tema — corrigida para "--accent-blue" (o
+        // mesmo azul usado em todo o resto do app para estado ativo/selecionado); a mesma variável também
+        // corrigia o toggle "chk-toggle-claude" LIGADO e o botão de tema claro/escuro quando escuro, que
+        // sofriam do mesmo problema.
+        const FRONTEND_VERSION = '3.45';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -8912,7 +8952,7 @@
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
                 <p><strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas): crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
                 <p><strong>Alertas Automáticos do Sistema</strong> (Central de Configurações &gt; Alertas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados), Personalização (Etapas e Categorias, Menus e Seções, Contratos) e Avançado (Checklist de Saúde do App, Sincronização, Restaurar Configurações de Fábrica) — todas com conteúdo próprio dentro da Central, sem abrir nenhuma janela separada — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Atalhos Rápidos para Histórico/Exportar Dados/Banco de Dados, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados), Personalização (Etapas e Categorias, Menus e Seções, Contratos) e Avançado (Checklist de Saúde do App, Sincronização, Restaurar Configurações de Fábrica) — todas com conteúdo próprio dentro da Central, sem abrir nenhuma janela separada — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Desde a V3.45, a janela em si não mostra mais status de sincronização nem versão do app — essa informação ficou só na barra de menus, no topo da tela (bolinhas de status + "v3.45", ao lado do nome da empresa logada), clicável pra abrir a própria Central de Configurações.</p>
                 <p><strong>Menus e Seções</strong> (Central de Configurações &gt; Personalização) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
@@ -9042,7 +9082,7 @@
                 <p>As bolinhas de progresso (metas com até 40 de valor) ficam com um espaçamento pequeno e fixo entre elas (10% do tamanho de cada uma) — não esticam pra ocupar o card inteiro; conforme a quantidade cresce, elas quebram linha e o card cresce verticalmente.</p>` } ,
             { icone: '📈', titulo: '16. Inteligência de Negócios e Exportação de Dados', corpo: `
                 <p>Reúne todos os dashboards (Comercial, Projetos, Financeiro, Equipamentos, Metas, NPS) num só lugar, navegável por abas, cada um com seu próprio filtro de período (Mensal/Trimestral/Anual/Personalizado).</p>
-                <p>Cada aba tem um botão de exportação de relatório (PDF com gráficos, ou Excel só com os dados). Já em <em>Exportar Dados</em> (menu lateral), dá pra baixar o banco de dados inteiro, por seção (Comercial, Orçamentos, Projetos, Financeiro, Equipamentos e Locações, Equipe e RH, Metas e Satisfação) ou tabela por tabela, em Excel ou PDF, pra backup ou análise externa. Antes de gerar, o botão <strong>Pré-visualizar</strong> mostra quantas linhas cada aba vai ter (evita baixar um arquivo vazio por engano). Dá pra desmarcar "Incluir informações internas" pra tirar colunas de rentabilidade/custos/margens do arquivo (útil se for compartilhar com alguém de fora), e marcar "Salvar uma cópia no Google Drive" pra já deixar o arquivo guardado na pasta "Exportações Aranuz", além de baixado. Em Configurações do App também dá pra configurar uma <strong>Exportação Automática</strong> (diária, semanal ou mensal) de uma seção — roda sozinha, sem precisar abrir o app.</p>` } ,
+                <p>Cada aba tem um botão de exportação de relatório (PDF com gráficos, ou Excel só com os dados). Já em <em>Exportar Dados</em> (desde a V3.45, em Central de Configurações &gt; Geral &gt; Atalhos Rápidos — saiu do menu lateral), dá pra baixar o banco de dados inteiro, por seção (Comercial, Orçamentos, Projetos, Financeiro, Equipamentos e Locações, Equipe e RH, Metas e Satisfação) ou tabela por tabela, em Excel ou PDF, pra backup ou análise externa. Antes de gerar, o botão <strong>Pré-visualizar</strong> mostra quantas linhas cada aba vai ter (evita baixar um arquivo vazio por engano). Dá pra desmarcar "Incluir informações internas" pra tirar colunas de rentabilidade/custos/margens do arquivo (útil se for compartilhar com alguém de fora), e marcar "Salvar uma cópia no Google Drive" pra já deixar o arquivo guardado na pasta "Exportações Aranuz", além de baixado. Em Configurações do App também dá pra configurar uma <strong>Exportação Automática</strong> (diária, semanal ou mensal) de uma seção — roda sozinha, sem precisar abrir o app.</p>` } ,
             { icone: '🔒', titulo: '17. Segurança e boas práticas', corpo: `
                 <p>Mantenha o acesso ao app restrito por login/senha no serviço de hospedagem escolhido. Não compartilhe o arquivo <code>.html</code> com ninguém fora da equipe — quem tiver o arquivo consegue ver o endereço do AppWeb configurado nele.</p>
                 <p>Revise de tempos em tempos quem tem acesso de edição à Planilha Google diretamente (Compartilhamento, no canto superior direito do Sheets) — esse acesso é independente do acesso ao app. Dê acesso de <strong>edição</strong> só pra quem realmente precisa; peça visualização pra quem só precisa consultar.</p>
@@ -9070,13 +9110,13 @@
                 <p>Se algo excluído direto na planilha continuar aparecendo no app, use <em>Forçar Sincronização</em> em Configurações do App.</p>
                 <p>O Histórico (registro de todas as alterações) tem um limite de linhas na planilha — quando enche, as entradas mais antigas são movidas automaticamente para uma aba extra ("Histórico - Arquivo 1", "2"...), sem perder nada, só liberando espaço na aba principal.</p>
                 <p>Se a conexão cair, o sino do topo avisa que o app está "offline" — os dados continuam salvos neste dispositivo e sincronizam assim que a conexão voltar.</p>
-                <p>Em Configurações do App, clicar 3 vezes seguidas no texto da versão (bem no topo da tela) abre um <strong>Painel de Diagnóstico</strong> — mostra versão do app, versão da planilha, status e hora da última sincronização, e quantos registros existem em cada coleção (útil pra bater com a planilha visualmente quando algo parece "faltando").</p>` } ,
+                <p>Clicar 3 vezes seguidas em cima da versão do app (desde a V3.45, na barra de menus, ao lado do nome da empresa logada e das bolinhas de sincronização) abre um <strong>Painel de Diagnóstico</strong> — mostra versão do app, versão da planilha, status e hora da última sincronização, e quantos registros existem em cada coleção (útil pra bater com a planilha visualmente quando algo parece "faltando").</p>` } ,
             { icone: '❓', titulo: '20. Perguntas frequentes', corpo: `
                 <p><strong>Posso usar o app pra mais de uma empresa?</strong> Sim — desde a V240/V241, isso é feito por login (cada usuário se cadastra e é aprovado com um <code>empresaId</code> específico), não mais por planilhas/deployments separados. As Regras de Segurança do Firestore garantem que uma empresa nunca acesse os dados de outra, mesmo estando no mesmo Aranuz. Ver Manual do Administrador de Usuários pra saber como aprovar/gerenciar contas.</p>
                 <p><strong>Meu login parou de funcionar, ou esqueci a senha — e agora?</strong> Fale com quem administra o Aranuz na sua empresa: ele consegue ver se sua conta está ativa ou foi desabilitada, e reprocessar seu acesso se precisar. O Aranuz em si não tem uma tela de "esqueci minha senha" própria — isso é resolvido pelo administrador.</p>
                 <p><strong>Posso mudar os nomes/textos dos contratos padrão?</strong> Sim — em Modelos de Contrato, qualquer edição salva automaticamente como uma nova versão, sem perder o histórico das anteriores.</p>
                 <p><strong>A sincronização parou, e agora?</strong> Confira sua conexão de internet primeiro. Se persistir, o sino do topo avisa "offline" — os dados continuam salvos neste dispositivo e sincronizam sozinhos assim que a conexão (com o Firestore, ou com a Planilha de backup) voltar.</p>
-                <p><strong>Onde fica o histórico de tudo que foi feito?</strong> No menu lateral, em "Histórico" — lista cronológica de toda ação relevante feita no app.</p>
+                <p><strong>Onde fica o histórico de tudo que foi feito?</strong> Desde a V3.45, em <em>Central de Configurações &gt; Geral &gt; Atalhos Rápidos &gt; Histórico</em> (saiu do rodapé da barra lateral, que agora só mostra o "Aranuz · © {ano}") — lista cronológica de toda ação relevante feita no app.</p>
                 <p><strong>Como funciona o backup dos dados?</strong> Além do próprio Firestore (banco de dados principal), existem dois níveis extras de backup automático numa Planilha Google de espelho: um snapshot a cada salvamento (últimos 11) e uma cópia completa do arquivo no Drive todo dia de madrugada (últimas 30). Veja o tópico "Como o Aranuz guarda os dados" para mais detalhes.</p>
                 <p><strong>Onde vejo as variáveis disponíveis pra um Modelo de Contrato?</strong> No tópico "Guia completo: criando e personalizando Contratos" deste manual — tem a lista completa por tipo de contrato (Contratada, Cliente, Projeto, Evento, Fornecedor, Locação), além do passo a passo pra criar Variáveis e Blocos Condicionais próprios.</p>
                 <p><strong>Por que um Orçamento de Locação de Equipamentos não aparece na lista de Propostas e Orçamentos?</strong> Se ele já estiver vinculado a um Orçamento de Serviço, ele some da lista principal de propósito — ele já está embutido/computado dentro daquele orçamento de serviço.</p>
@@ -9160,7 +9200,7 @@
                 <p><strong>Configuração necessária, uma vez só:</strong></p>
                 <p>1) No editor do Apps Script: <em>⚙️ Configurações do Projeto</em> &gt; marque "Mostrar arquivo de manifesto appsscript.json na Editor". Abra o appsscript.json e garanta que a lista "oauthScopes" inclui <code>https://www.googleapis.com/auth/datastore</code> (mantenha os escopos que já existirem). Salve e rode qualquer função do projeto uma vez pra reautorizar (vai pedir pra aceitar a nova permissão).</p>
                 <p>2) A conta Google dona do Apps Script precisa ter acesso ao projeto do Google Cloud que aparece em <code>firebaseConfigPiloto.projectId</code> (mesmo Project ID configurado no Firebase do app) — normalmente já tem, se foi a mesma conta que criou o projeto Firebase.</p>
-                <p>3) Dentro do app: <em>Configurações Avançadas &gt; Integração com Firestore — Formulários Públicos</em> &gt; cole o "ID da Empresa (Firebase)" no campo. Esse valor você encontra em Configurações do App, clicando 3 vezes seguidas no número da versão (abre o Painel de Diagnóstico) &gt; campo "Empresa (Firebase)".</p>
+                <p>3) Dentro do app: <em>Configurações Avançadas &gt; Integração com Firestore — Formulários Públicos</em> &gt; cole o "ID da Empresa (Firebase)" no campo. Esse valor você encontra clicando 3 vezes seguidas na versão do app, na barra de menus (abre o Painel de Diagnóstico) &gt; campo "Empresa (Firebase)".</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Enquanto o "ID da Empresa (Firebase)" não for preenchido, a gravação no Firestore fica desligada (fail-safe) — a planilha Sheets continua recebendo os 3 formulários normalmente, exatamente como antes desta versão. Nada quebra se você ainda não tiver feito a configuração acima.</p>
                 <p style="color:#dc2626; font-weight:600; font-size:12px;">⚠️ Falta ainda a parte 2 do Bloco 4: recriar o formulário de contato do site, conectado ao Firestore com captcha anti-spam.</p>` },
             { icone: '🆕', titulo: '31. Formulário de Contato do Site (Bloco 4, parte 2, ÚLTIMA — V2.74)', corpo: `
@@ -15361,6 +15401,12 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.45', data: '13/07/2026', itens: [
+                '"Aranuz · © 2026" saiu do topo da barra lateral e foi para o rodapé — Histórico, Exportar Dados e o acesso à Planilha (Banco de Dados) continuam disponíveis em Central de Configurações > Geral > Atalhos Rápidos.',
+                'Largura da janela de Central de Configurações dobrada, para acomodar melhor o conteúdo das abas.',
+                'Status de sincronização (Planilha e Firestore) e a versão do app agora aparecem só na barra de menus, no topo da tela — saíram de dentro da janela de Central de Configurações.',
+                'Bugfix: o item selecionado no menu da Central de Configurações não tinha destaque nenhum (cor de fundo inexistente) — agora aparece destacado com a cor de ação padrão do app. O mesmo bug também deixava sem cor o toggle de liga/desliga quando ligado e o botão de tema claro/escuro quando no modo escuro — ambos corrigidos junto.'
+            ]},
             { versao: '3.44', data: '13/07/2026', itens: [
                 'Nova etapa do funil "Contato Atendimento", entre "No Radar" e "Abordado" — representa o primeiro contato (geralmente um atendente que indica o decisor); não gera data automática de próxima ação.',
                 'Perfil do Lead: seção "Contatos (Decisor & Influenciador)" agora se chama só "Contatos". Adicionados os campos "Nome Atendente/Indicação" e "Telefone" (primeiro contato) e a lista "+ Contatos" para registrar quantos contatos adicionais forem necessários (nome, função, telefone, e-mail) — tudo sincronizado com Firebase e Planilha.',
@@ -15499,6 +15545,9 @@
             // V3.40 — Rodada 4 (3F): idem pra aba "Personalização" — inicializa e renderiza as 3 áreas
             // inline (Etapas e Categorias, Menus e Seções, Contratos) sem abrir nada.
             if (window._centralConfigTabAtual_ === 'personalizacao') setTimeout(_initPersonalizacaoTab_, 0);
+            // V3.45 — Rodada 4 (item 9): aba "Geral" ganhou o link "Acessar Banco de Dados" (#sidebarDbLink)
+            // nos Atalhos Rápidos — reaproveita a mesma função que já preenche esse href (sem duplicar lógica).
+            if (window._centralConfigTabAtual_ === 'geral') setTimeout(atualizarLinksEstaticosNaTela, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
@@ -15509,29 +15558,20 @@
             if (key === 'integracao') setTimeout(openAppConfigModal, 0); // V3.37 — Rodada 4 (3C)
             if (key === 'alertas') setTimeout(_popularAlertasPersonalizados_, 0); // V3.39 — Rodada 4 (3E)
             if (key === 'personalizacao') setTimeout(_initPersonalizacaoTab_, 0); // V3.40 — Rodada 4 (3F)
+            if (key === 'geral') setTimeout(atualizarLinksEstaticosNaTela, 0); // V3.45 — Rodada 4 (item 9)
         }
-        // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
-        // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
-        // mantêm atualizados, sem precisar duplicar elemento com o mesmo id (evitaria only-primeiro-ganha
-        // do getElementById). Atualiza de novo a cada troca de aba, que já re-renderiza este rodapé.
-        function _ccRodapeSincronizacao_() {
-            const statusSheets = localStorage.getItem('mang_sync_status');
-            const statusFirestore = localStorage.getItem('mhub_firestore_sync_status') || 'nunca';
-            const ts = Number(localStorage.getItem('mang_last_sync_ts') || 0);
-            const corSheets = statusSheets === 'online' ? 'var(--accent-green)' : (statusSheets === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)');
-            const corFirestore = statusFirestore === 'online' ? 'var(--accent-green)' : (statusFirestore === 'offline' ? 'var(--accent-red)' : 'var(--text-muted)');
-            return '<div style="display:flex; align-items:center; justify-content:center; gap:18px; flex-wrap:wrap; font-size:11px; color:var(--text-secondary); padding:10px 0;">'
-                + '<span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:'+corSheets+'; margin-right:5px;"></span>Planilha (Sheets)</span>'
-                + '<span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:'+corFirestore+'; margin-right:5px;"></span>Firestore</span>'
-                + '<span>Última sincronização: '+(ts ? new Date(ts).toLocaleString('pt-BR') : 'nunca')+'</span>'
-                + '</div>';
-        }
+        // V3.45 — 13/07/2026 (Rodada 4, item 11): _ccRodapeSincronizacao_() (rodapé com os 2 status +
+        // "última sincronização") foi REMOVIDA — essa informação só aparece na barra de menus agora
+        // (#headerSyncStatus), não é mais renderizada dentro da Central de Configurações.
+        // V3.45 — 13/07/2026 (Rodada 4, item 12): bugfix — o menu selecionado usava "--accent-primary",
+        // variável que nunca existiu em nenhum tema, então o destaque virava transparente e a aba ativa
+        // se confundia com o fundo. Corrigido pra "--accent-blue" (ver função abaixo).
         function _renderCentralConfig_() {
             const atual = window._centralConfigTabAtual_ || 'geral';
             const abas = CENTRAL_CONFIG_GRUPOS_.map(function(g){
                 const itens = g.abas.map(function(t){
                     const ativo = t.key === atual;
-                    return '<button type="button" onclick="_centralConfigIrPara_(\''+t.key+'\')" style="text-align:left; padding:9px 14px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-weight:'+(ativo?'700':'400')+'; background:'+(ativo?'var(--accent-primary)':'transparent')+'; color:'+(ativo?'#fff':'var(--text-primary)')+'; transition:background .15s; width:100%;">'+t.label+'</button>';
+                    return '<button type="button" onclick="_centralConfigIrPara_(\''+t.key+'\')" style="text-align:left; padding:9px 14px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-weight:'+(ativo?'700':'400')+'; background:'+(ativo?'var(--accent-blue)':'transparent')+'; color:'+(ativo?'#fff':'var(--text-primary)')+'; transition:background .15s; width:100%;">'+t.label+'</button>';
                 }).join('');
                 return '<div style="margin-bottom:14px;">'+
                     '<div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); padding:4px 14px 6px;">'+esc(g.grupo)+'</div>'+
@@ -15553,6 +15593,16 @@
                     '<div><div style="font-size:11px; color:var(--text-secondary);">E-mail</div><div style="font-size:13px; font-weight:600;">'+esc(emailConta)+'</div></div>'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">Cadastrado em</div><div style="font-size:13px; font-weight:600;">'+esc(cadastradoEm)+'</div></div>'+
                     '<div><div style="font-size:11px; color:var(--text-secondary);">Licença de uso</div><div style="font-size:13px; font-weight:600;">'+esc(licencaTxt)+'</div></div>'+
+                    '</div>'+
+                    // V3.45 — 13/07/2026 (Rodada 4, item 9): Histórico, Exportar Dados e o acesso à Planilha
+                    // (Banco de Dados) saíram do rodapé da barra lateral — o espaço virou o copyright
+                    // "Aranuz · © {ano}" (pedido do cliente). Continuam acessíveis aqui, sem perder nenhuma
+                    // função, só reorganizados numa seção "Atalhos Rápidos" dentro de Geral.
+                    '<div class="form-section-title" style="margin-top:24px;">Atalhos Rápidos</div>'+
+                    '<div style="display:flex; flex-direction:column; gap:8px; max-width:320px;">'+
+                    '<button type="button" class="btn-secondary" style="justify-content:flex-start; gap:8px;" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'sys-history\');">🕐 Histórico</button>'+
+                    '<button type="button" class="btn-secondary" style="justify-content:flex-start; gap:8px;" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); openExportModal();">⬇️ Exportar Dados Brutos (Excel/PDF)</button>'+
+                    '<a id="sidebarDbLink" href="#" target="_blank" class="btn-secondary" style="justify-content:flex-start; gap:8px; text-decoration:none; display:flex; align-items:center;">🗄️ Acessar Banco de Dados (Planilha)</a>'+
                     '</div>';
             } else if(atual === 'aparencia') {
                 const temaAtual = document.documentElement.getAttribute('data-theme') || 'light';
@@ -15560,7 +15610,7 @@
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Escolha entre o modo claro e o modo escuro — a preferência fica salva neste dispositivo. O app sempre abre no claro por padrão (ver V3.33); esta escolha manual continua valendo até você trocar de novo.</div>'+
                     '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; border:1px solid var(--border-color); border-radius:10px; max-width:340px;">'+
                     '<span style="font-size:13px;">'+(temaAtual==='dark'?'Modo Escuro':'Modo Claro')+'</span>'+
-                    '<button type="button" onclick="toggleTheme(); _centralConfigIrPara_(\'aparencia\');" style="width:44px; height:24px; border-radius:12px; border:none; cursor:pointer; position:relative; background:'+(temaAtual==='dark'?'var(--accent-primary)':'#ccc')+'; transition:background .2s;">'+
+                    '<button type="button" onclick="toggleTheme(); _centralConfigIrPara_(\'aparencia\');" style="width:44px; height:24px; border-radius:12px; border:none; cursor:pointer; position:relative; background:'+(temaAtual==='dark'?'var(--accent-blue)':'#ccc')+'; transition:background .2s;">'+
                     '<span style="position:absolute; top:2px; left:'+(temaAtual==='dark'?'22px':'2px')+'; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.3);"></span>'+
                     '</button></div>';
             } else if(atual === 'segurancaAcesso') {
@@ -15628,13 +15678,13 @@
                     }).join('')+
                     '</div>';
             }
+            // V3.45 — 13/07/2026 (Rodada 4, item 11): rodapé de sincronização + versão REMOVIDO desta
+            // janela (pedido do cliente: "só na barra de menus") — ver #headerSyncStatus no cabeçalho do
+            // app (topo da tela), que agora é o único lugar onde essa informação aparece.
             return '<div class="modal-header-title" style="margin-bottom:16px; flex-shrink:0;">Central de Configurações</div>'+
                 '<div class="cc-body">'+
                 '<div class="cc-sidebar" style="display:flex; flex-direction:column; min-width:210px; flex-shrink:0; border-right:1px solid var(--border-color); padding-right:16px;">'+abas+'</div>'+
                 '<div class="cc-content">'+conteudo+'</div>'+
-                '</div>'+
-                '<div style="flex-shrink:0; border-top:1px solid var(--border-color); margin-top:8px;">'+_ccRodapeSincronizacao_()+
-                '<div style="text-align:center; font-size:11px; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:8px; padding-bottom:4px;">Aranuz · versão '+esc(FRONTEND_VERSION)+' · © '+new Date().getFullYear()+'</div>'+
                 '</div>'+
                 '<div class="modal-buttons-row" style="margin-top:10px; flex-shrink:0;"><button class="btn-secondary" onclick="closeGenericModal(\'modalCentralConfigOverlay\')">Fechar</button></div>';
         }

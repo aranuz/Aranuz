@@ -1,6 +1,10 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_44.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_45.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.45 — 13/07/2026 (Rodada 4, Configurações Gerais — itens 9 a 12): só pareamento — nenhuma mudança
+ * neste arquivo. Os 4 itens desta rodada (copyright no rodapé da barra lateral, largura da Central de
+ * Configurações, status de sincronização/versão só na barra de menus, bugfix do destaque do menu
+ * selecionado) são 100% front-end (App), nenhuma rota/coluna nova.
  * V3.44 — 13/07/2026 (Rodada 3, Itens do Perfil do Lead): MUDANÇA REAL NESTE ARQUIVO — OPP_COLS ganhou
  * 3 colunas novas no FINAL da lista (nunca no meio, pra não quebrar dados existentes por índice):
  * "atendente_nome", "atendente_telefone" e "contatos_adicionais" (JSON da lista "+ Contatos" do Perfil
@@ -300,7 +304,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.44"; // V3.44 — 13/07/2026 (Rodada 3): OPP_COLS +3 colunas (atendente_nome/atendente_telefone/contatos_adicionais) — ver changelog no topo do arquivo.
+var BACKEND_VERSION = "3.45"; // V3.45 — 13/07/2026 (Rodada 4): só pareamento — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.
