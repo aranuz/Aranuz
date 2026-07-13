@@ -3316,6 +3316,13 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        // V3.40 — 13/07/2026 (Rodada 4, Central de Configurações 3F): aba "Personalização" migrada de
+        // verdade — Etapas e Categorias, Menus e Seções e Contratos (Regras/Variáveis/Blocos) com o
+        // formulário completo dentro da aba, sem nenhum botão pra abrir outra janela (pedido explícito do
+        // cliente). renderModalEtapasCategorias() e as dezenas de funções de edição de Contrato que
+        // chamavam renderDynamic() foram adaptadas via um hook central (_refreshPersonalizacaoContratosInline_(),
+        // chamado no fim de renderDynamic()/renderDynamicSync()) — evita reescrever cada uma
+        // individualmente. abrirGerenciarMenuModal() (sem outro chamador) foi removida.
         // V3.39 — 13/07/2026 (Rodada 4, Central de Configurações 3E): aba "Alertas" migrada de verdade —
         // Alertas Automáticos do Sistema, Alertas Personalizáveis (prazo/limite) e E-mails e Alertas,
         // seções separadas por linhas sutis. "Alertas Proativos" renomeado "Alertas Personalizados" e
@@ -3336,7 +3343,7 @@
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.39';
+        const FRONTEND_VERSION = '3.40';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -4758,29 +4765,63 @@
             // seção no menu agora também some com a aba correspondente aqui, igual às demais.
             'Marketing': 'marketing', 'Gestão de Projetos Culturais': 'cultural'
         };
+        // V3.40 — 13/07/2026 (Rodada 4, Central de Configurações 3F): conteúdo real da aba
+        // "Personalização" — Etapas e Categorias, Menus e Seções e Contratos, todos com o formulário de
+        // verdade dentro da própria aba (pedido do cliente: nenhum botão pra abrir outra janela). Cada
+        // seção escreve no seu próprio contêiner (ver _renderMenusSecoesInline_() logo acima,
+        // renderModalEtapasCategorias() e _renderPersonalizacaoContratosInline_(), mais abaixo).
+        function _renderPersonalizacaoTabContent_() {
+            return `
+                <div style="display:flex; flex-direction:column; gap:20px; max-width:760px;">
+                    <div id="personalizacaoEtapasArea"></div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div class="form-section-title" style="margin-top:0; font-size:14px;">Menus e Seções</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:12px;">Desative seções inteiras ou telas específicas que sua equipe não usa. Uma seção desativada some da barra lateral e, quando existir, da aba correspondente em Inteligência de Negócios.</div>
+                        <div id="personalizacaoMenusArea"></div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div class="form-section-title" style="margin-top:0; font-size:14px;">Contratos</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:12px;">Defina como o app escolhe o modelo de contrato certo pra cada projeto, crie variáveis próprias e blocos de texto que mudam sozinhos.</div>
+                        <div id="personalizacaoContratosArea"></div>
+                    </div>
+                </div>`;
+        }
+        // Chama as 3 inicializações — cada uma escreve no seu próprio contêiner (guardas if(el) já
+        // existem em cada uma, seguro de chamar mesmo antes do DOM da aba existir).
+        function _initPersonalizacaoTab_() {
+            abrirModalEtapasCategorias();
+            _renderMenusSecoesInline_();
+            _initPersonalizacaoContratosInline_();
+        }
         // V174: gerenciador de visibilidade da barra lateral (Configurações Avançadas). Cada checkbox de
         // seção representa "seção HABILITADA" (marcado = visível) — desmarcar esconde a seção inteira (e
         // a aba correspondente em Inteligência de Negócios); os checkboxes de sub-item, dentro dela,
         // permitem esconder só uma tela específica sem desativar a seção toda.
-        function abrirGerenciarMenuModal() {
+        // V3.40 — 13/07/2026 (Rodada 4, 3F): versão inline de "Gerenciar Seções do Menu" — mesmo
+        // conteúdo/lógica que vivia em abrirGerenciarMenuModal() (removida, não tinha mais nenhum outro
+        // chamador), só que escrita direto no contêiner da aba "Personalização" da Central de
+        // Configurações, sem abrir modal.
+        function _renderMenusSecoesInline_() {
+            const container = document.getElementById('personalizacaoMenusArea');
+            if (!container) return;
             const secoesOcultas = getMenuSecoesOcultas();
             const itensOcultos = getMenuItensOcultos();
-            const html = '<div class="modal-header-title" style="margin-bottom:6px;">Gerenciar Seções do Menu</div>'+
-                '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">Desative seções inteiras ou telas específicas que sua equipe não usa. Uma seção desativada some da barra lateral e, quando existir, da aba correspondente em Inteligência de Negócios.</div>'+
-                MENU_ESTRUTURA.map(function(sec){
-                    const secVisivel = !secoesOcultas.includes(sec.secao);
-                    return '<div data-secao-wrapper="'+esc(sec.secao)+'" style="border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:10px;">'+
-                        '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; font-weight:700; font-size:13px;"><span>'+esc(sec.secao)+'</span><input type="checkbox" class="chk-toggle-claude" data-menu-secao="'+esc(sec.secao)+'" '+(secVisivel?'checked':'')+' onchange="toggleMenuSecaoCheckbox(this)"></label>'+
-                        '<div style="margin-left:26px; margin-top:8px; display:flex; flex-direction:column; gap:6px;">'+
-                        sec.itens.map(function(it){
-                            const itemVisivel = !itensOcultos.includes(it.tab);
-                            return '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; font-size:12px; '+(secVisivel?'':'opacity:.5;')+'"><span>'+esc(it.label)+'</span><input type="checkbox" class="chk-toggle-claude" data-menu-item="'+it.tab+'" '+(itemVisivel?'checked':'')+' '+(secVisivel?'':'disabled')+'></label>';
-                        }).join('')+
-                        '</div></div>';
+            container.innerHTML = MENU_ESTRUTURA.map(function(sec){
+                const secVisivel = !secoesOcultas.includes(sec.secao);
+                return '<div data-secao-wrapper="'+esc(sec.secao)+'" style="border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:10px;">'+
+                    '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; font-weight:700; font-size:13px;"><span>'+esc(sec.secao)+'</span><input type="checkbox" class="chk-toggle-claude" data-menu-secao="'+esc(sec.secao)+'" '+(secVisivel?'checked':'')+' onchange="toggleMenuSecaoCheckbox(this)"></label>'+
+                    '<div style="margin-left:26px; margin-top:8px; display:flex; flex-direction:column; gap:6px;">'+
+                    sec.itens.map(function(it){
+                        const itemVisivel = !itensOcultos.includes(it.tab);
+                        return '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; font-size:12px; '+(secVisivel?'':'opacity:.5;')+'"><span>'+esc(it.label)+'</span><input type="checkbox" class="chk-toggle-claude" data-menu-item="'+it.tab+'" '+(itemVisivel?'checked':'')+' '+(secVisivel?'':'disabled')+'></label>';
+                    }).join('')+
+                    '</div></div>';
                 }).join('')+
-                '<div class="modal-buttons-row"><button class="btn-secondary" onclick="closeGenericModal(\'modalGerenciarMenuOverlay\')">Cancelar</button><button class="btn-primary" onclick="salvarGerenciarMenu()">Salvar</button></div>';
-            openGenericModal('modalGerenciarMenuOverlay', html, true);
+                '<div class="modal-buttons-row" style="justify-content:flex-start;"><button class="btn-primary" onclick="salvarGerenciarMenu()">Salvar</button></div>';
         }
+        // V3.40 — abrirGerenciarMenuModal() removida — o antigo modal foi substituído por
+        // _renderMenusSecoesInline_() acima; toggleMenuSecaoCheckbox()/salvarGerenciarMenu() abaixo
+        // continuam as mesmas, sem nenhuma mudança de lógica.
         function toggleMenuSecaoCheckbox(cb) {
             const wrapper = cb.closest('[data-secao-wrapper]');
             if(!wrapper) return;
@@ -4797,7 +4838,6 @@
             setLink('menuSecoesOcultas', JSON.stringify(secoesOcultas));
             setLink('menuSubItensOcultos', JSON.stringify(itensOcultos));
             saveDb();
-            closeGenericModal('modalGerenciarMenuOverlay');
             aplicarVisibilidadeMenu();
             renderDynamic();
             showToast('Menu atualizado.');
@@ -6733,6 +6773,16 @@
                 if(kanban) kanban.scrollLeft = info.kanbanLeft;
             }
         }
+        // V3.40 — 13/07/2026 (Rodada 4, 3F): dezenas de funções de edição de Regras/Variáveis/Blocos de
+        // Contrato chamam renderDynamic()/renderDynamicPreserveInputs() esperando redesenhar a PÁGINA
+        // "personalizacao-contratos" — mas quando a edição acontece dentro da aba "Personalização" da
+        // Central de Configurações (modal por cima da página principal), essas funções não devem mexer
+        // na área principal. Este hook central resolve pra todos os call sites de uma vez, sem precisar
+        // tocar em cada função individualmente.
+        function _refreshPersonalizacaoContratosInline_() {
+            const container = document.getElementById('personalizacaoContratosArea');
+            if (container) container.innerHTML = _renderPersonalizacaoContratosInline_();
+        }
         function renderDynamic() {
             if(_renderPending) return;
             _renderPending = true;
@@ -6747,6 +6797,7 @@
                 else { area.innerHTML = ''; }
                 _restaurarFoco(foco);
                 _restaurarScroll(area, scrollInfo);
+                _refreshPersonalizacaoContratosInline_();
             });
         }
         function renderDynamicSync() {
@@ -6760,6 +6811,7 @@
             else { area.innerHTML = ''; }
             _restaurarFoco(foco);
             _restaurarScroll(area, scrollInfo);
+            _refreshPersonalizacaoContratosInline_();
         }
 /* --- DASHBOARD FINANCEIRO --- */
 
@@ -8743,14 +8795,14 @@
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
                 <p><strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas): crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
                 <p><strong>Alertas Automáticos do Sistema</strong> (Central de Configurações &gt; Alertas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados) e Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; Personalização e Avançado ainda abrem a página "Configurações Avançadas" por um botão, enquanto essas migrações não terminam — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
-                <p><strong>Gerenciar Seções do Menu</strong> (dentro de Configurações Avançadas) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados) e Personalização (Etapas e Categorias, Menus e Seções, Contratos) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; só Avançado ainda abre a página "Configurações Avançadas" por um botão, enquanto essa última migração não termina — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
+                <p><strong>Menus e Seções</strong> (Central de Configurações &gt; Personalização) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
             { icone: '🛠', titulo: '6. Configurações Avançadas — guia completo dos controles', corpo: `
                 <p>Esta tela fica em <em>Configurações do App (⚙) → Configurações Avançadas</em>. Abaixo, o que cada bloco faz, na mesma ordem em que aparece na tela.</p>
                 <p><strong>Alertas Automáticos do Sistema:</strong> 18 avisos que o sino do topo gera sozinho, sem cadastro manual (15 com prazo fixo + 3 com limite personalizável — Alertas Culturais e Concentração de Cliente) — cada um com seu próprio interruptor (liga/desliga). Isso é diferente dos <strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas, com nome/descrição/dia do mês escolhidos por você) e do card <strong>Demandas</strong> no Resumo (gerado a partir de pendências reais, não é uma lista configurável). Ver a lista completa no tópico "5. Configuração inicial".</p>
-                <p><strong>Etapas e Categorias</strong> (botão "Gerenciar Etapas e Categorias"): personalize nomes, ordem e adicione novas Etapas de Projeto, Categorias de Projeto e Etapas do Funil de Leads — sem mexer em código. Alguns itens usados em automações do próprio sistema (ex: "No Radar" no funil de leads, ou as etapas que disparam alertas automáticos) ficam com um cadeado 🔒: não dá pra renomear ou excluir esses, só reordenar. Nessa mesma tela também ficam os <strong>intervalos de próxima ação e de inatividade</strong> por etapa do funil (usados no auto-sweep de leads parados — ver tópico 8).</p>
+                <p><strong>Etapas e Categorias</strong> (Central de Configurações &gt; Personalização): personalize nomes, ordem e adicione novas Etapas de Projeto, Categorias de Projeto e Etapas do Funil de Leads — sem mexer em código. Alguns itens usados em automações do próprio sistema (ex: "No Radar" no funil de leads, ou as etapas que disparam alertas automáticos) ficam com um cadeado 🔒: não dá pra renomear ou excluir esses, só reordenar. Nessa mesma tela também ficam os <strong>intervalos de próxima ação e de inatividade</strong> por etapa do funil (usados no auto-sweep de leads parados — ver tópico 8).</p>
                 <p><strong>Barra Lateral</strong> (botão "Gerenciar Seções do Menu"): esconde seções inteiras (ex: "Recursos e Operacional") ou telas específicas dentro de uma seção (ex: só "Time-Tracker") que a equipe não usa. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios. Reversível a qualquer momento, na mesma tela.</p>
                 <p><strong>Exportação Automática:</strong> escolha uma Seção (Comercial, Orçamentos, Projetos, Financeiro, Equipamentos e Locações, Equipe e RH, Metas e Satisfação) e uma Frequência (Diária, Semanal — toda segunda —, ou Mensal — todo dia 1º) e clique em Salvar — a partir daí, uma planilha Google com aqueles dados é gerada sozinha, sem precisar abrir o app, na pasta "Exportações Aranuz" do Drive. Escolher "Nenhuma (desativada)" na Seção desliga a exportação automática.</p>
                 <p><strong>Backup Diário Automático:</strong> habilitado por padrão, roda às 03h. Dá pra desligar, trocar o horário (qualquer hora cheia) e escolher quantas cópias diárias ficam guardadas no Drive antes das mais antigas serem apagadas sozinhas (padrão: 30). Esse backup é independente do snapshot interno que roda a cada salvamento (ver tópico 2) — são duas redes de segurança em paralelo. Se essa rotina falhar (ex: permissão do Drive revogada), o sino avisa sozinho (alerta "Falha na execução do Backup Diário Automático", desligável junto com os demais Alertas Automáticos do Sistema).</p>
@@ -8819,7 +8871,7 @@
                 <p>Vá em <strong>Contratos → Modelos de Contrato → + Novo Modelo</strong>. Dê um nome (ex: "Contrato de Parceria Comercial") e escreva o texto normalmente, como um documento comum — introduza as variáveis prontas da Parte 1 onde fizer sentido (ex: no lugar do nome do cliente, escreva <code>{{cliente_razao_social}}</code>). Salvar sempre cria uma <strong>nova versão</strong> do modelo (nunca sobrescreve a anterior) — o app sempre usa a versão mais recente pra gerar contratos novos, a menos que você fixe manualmente uma versão anterior como "atual" (ícone ⭐ na lista de versões, útil se uma revisão jurídica ainda estiver em análise). Depois de criado, teste gerando um contrato de verdade (ou um rascunho vinculado a um projeto de teste) e confira na tela de Conferência se todas as variáveis foram substituídas corretamente — qualquer <code>{{tag}}</code> que sobrar sem trocar aparece destacada ali.</p>
 
                 <div class="form-section-title">Parte 3 — Criando uma Variável Personalizada (passo a passo)</div>
-                <p>Use isso quando quiser um <strong>apelido mais curto ou mais claro</strong> pra uma variável que já existe, ou um <strong>texto fixo reutilizável</strong> (ex: um trecho jurídico padrão que se repete em vários modelos). Vá em <strong>Configurações Avançadas → Personalização de Contratos → aba "Variáveis Personalizadas"</strong>:</p>
+                <p>Use isso quando quiser um <strong>apelido mais curto ou mais claro</strong> pra uma variável que já existe, ou um <strong>texto fixo reutilizável</strong> (ex: um trecho jurídico padrão que se repete em vários modelos). Vá em <strong>Central de Configurações → Personalização → Contratos → aba "Variáveis Personalizadas"</strong>:</p>
                 <p>1. Clique em <strong>+ Adicionar Variável</strong>.<br>
                 2. Em "Nome da Variável (sem chaves)", escreva um nome só com letras minúsculas e underscore — ex: <code>nome_gerente_projeto</code>. É esse nome que vira a tag <code>{{nome_gerente_projeto}}</code> pra usar em qualquer Modelo.<br>
                 3. Em "Tipo", escolha <strong>Campo Existente</strong> (pra reaproveitar um dado que já existe, ex: CNPJ do cliente) ou <strong>Texto Fixo</strong> (pra um valor que nunca muda, ex: um aviso legal padrão).<br>
@@ -8830,7 +8882,7 @@
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Hoje a lista de "Campo Existente" cobre Projeto, Cliente e Fornecedor — os dados da própria Contratada (Parte 1, <code>{{contratado_*}}</code>) e de Locação de Equipamentos ainda não aparecem como origem selecionável aqui, mas continuam funcionando normalmente se você digitar a tag original direto no Modelo.</p>
 
                 <div class="form-section-title">Parte 4 — Criando um Bloco Condicional Personalizado (passo a passo)</div>
-                <p>Use isso quando quiser que um <strong>trecho inteiro do contrato mude sozinho</strong> conforme alguma característica do projeto — igual aos <code>BLOCO_*</code> prontos da Parte 1, só que com a condição e o texto de cada opção definidos por você. Vá em <strong>Configurações Avançadas → Personalização de Contratos → aba "Blocos Condicionais"</strong>:</p>
+                <p>Use isso quando quiser que um <strong>trecho inteiro do contrato mude sozinho</strong> conforme alguma característica do projeto — igual aos <code>BLOCO_*</code> prontos da Parte 1, só que com a condição e o texto de cada opção definidos por você. Vá em <strong>Central de Configurações → Personalização → Contratos → aba "Blocos Condicionais"</strong>:</p>
                 <p>1. Clique em <strong>+ Adicionar Bloco</strong>.<br>
                 2. Dê um nome em maiúsculas, sem espaços — ex: <code>ENTREGA_EXPRESSA</code>. Isso vira a tag <code>{{BLOCO_ENTREGA_EXPRESSA}}</code>.<br>
                 3. Clique em <strong>+ Adicionar Condição</strong> pra cada variação de texto que você quer. Cada condição tem 3 partes: um Campo (ex: "Categoria do Projeto"), um Valor esperado (ex: "Publicidade"), e o Texto que entra no contrato quando essa combinação bater.<br>
@@ -8841,7 +8893,7 @@
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Os campos disponíveis pra condição são uma lista fechada de propósito (Tipo do Projeto, Categoria do Projeto, Sigiloso, Imagens Aéreas, Material Bruto, HD Físico, Portfólio, Transporte/Alimentação por conta de quem, Forma de Pagamento) — assim nunca dá erro de digitação num campo que não existe. Se precisar condicionar por outro campo que não está nessa lista, fale com quem mantém o app.</p>
 
                 <div class="form-section-title">Parte 5 — Como o app escolhe o Modelo certo sozinho</div>
-                <p>Em <strong>Configurações Avançadas → Personalização de Contratos → aba "Regras de Modelo"</strong>, você define qual Modelo se aplica a cada combinação de Tipo (Pontual/Recorrente) + Categoria de projeto — assim, na tela Gerar Contrato, o modelo certo já vem pré-selecionado sozinho ao escolher o projeto. Cada regra tem 3 partes: Tipo, Categoria e o Modelo a usar; use "Qualquer Tipo"/"Qualquer Categoria" pra deixar um dos dois lados em aberto. <strong>A primeira regra (de cima pra baixo) cuja combinação bater com o projeto é a que vence</strong> — por isso a ordem importa: coloque regras mais específicas (ex: Pontual + Publicidade) acima de regras mais genéricas (ex: Qualquer Tipo + Qualquer Categoria), senão a genérica "rouba" a vez antes de chegar na específica. Reordene com as setas ↑↓, e use "Restaurar Regras de Fábrica" se quiser voltar ao comportamento original do app.</p>
+                <p>Em <strong>Central de Configurações → Personalização → Contratos → aba "Regras de Modelo"</strong>, você define qual Modelo se aplica a cada combinação de Tipo (Pontual/Recorrente) + Categoria de projeto — assim, na tela Gerar Contrato, o modelo certo já vem pré-selecionado sozinho ao escolher o projeto. Cada regra tem 3 partes: Tipo, Categoria e o Modelo a usar; use "Qualquer Tipo"/"Qualquer Categoria" pra deixar um dos dois lados em aberto. <strong>A primeira regra (de cima pra baixo) cuja combinação bater com o projeto é a que vence</strong> — por isso a ordem importa: coloque regras mais específicas (ex: Pontual + Publicidade) acima de regras mais genéricas (ex: Qualquer Tipo + Qualquer Categoria), senão a genérica "rouba" a vez antes de chegar na específica. Reordene com as setas ↑↓, e use "Restaurar Regras de Fábrica" se quiser voltar ao comportamento original do app.</p>
 
                 <div class="form-section-title">Parte 6 — Exemplo completo, do início ao fim</div>
                 <p>Digamos que sua produtora agora faz também eventos corporativos white-label (assinando com o nome de outra marca) e você quer um contrato específico pra isso. Passo a passo: <strong>(1)</strong> Em Modelos de Contrato, crie "Contrato Eventos White-Label" com o texto todo, usando <code>{{contratado_razao_social}}</code>, <code>{{cliente_razao_social}}</code>, <code>{{evento_nome}}</code> etc. normalmente. <strong>(2)</strong> Nesse texto, você quer que uma cláusula de confidencialidade mais rígida apareça só quando o projeto for marcado como Sigiloso — em vez de escrever as duas versões e escolher na mão toda vez, use o bloco pronto <code>{{clausula_sigilo_projeto}}</code> da Parte 1 (ele já faz exatamente isso). <strong>(3)</strong> Você também quer uma cláusula de "marca operacional" que muda o nome como a empresa assina dependendo se é White-Label ou não — como isso não existe pronto, crie um Bloco Condicional próprio <code>ASSINATURA_MARCA</code> (Parte 4) com a condição certa. <strong>(4)</strong> Por fim, vá em Regras de Modelo (Parte 5) e adicione uma regra "Tipo: Evento, Categoria: [a categoria que você usa pra isso] → Contrato Eventos White-Label", posicionada acima de qualquer regra genérica de Eventos — assim, todo projeto novo dessa combinação já vem com o modelo certo pré-selecionado, sem ninguém precisar lembrar de escolher manualmente.</p>
@@ -15116,6 +15168,10 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.40', data: '13/07/2026', itens: [
+                'Central de Configurações — aba "Personalização": Etapas e Categorias, Menus e Seções e Contratos agora têm o formulário completo dentro da própria aba — nenhum botão abre outra janela.',
+                'Personalização de Contratos (Regras de Modelo, Variáveis Personalizadas, Blocos Condicionais) funciona 100% inline dentro da aba, incluindo adicionar/remover itens.'
+            ]},
             { versao: '3.39', data: '13/07/2026', itens: [
                 'Central de Configurações — aba "Alertas": migrada pra dentro da Central (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas), seções separadas por linhas sutis.',
                 '"Alertas Proativos" (Produtora/Empresa) renomeado para "Alertas Personalizados" e movido pra dentro da aba Alertas, com salvamento próprio.',
@@ -15228,6 +15284,9 @@
             // V3.39 — Rodada 4 (3E): idem pra aba "Alertas" — popula a lista de Alertas Personalizados
             // (antigo "Alertas Proativos", que morava na aba Empresa) sem abrir nada.
             if (window._centralConfigTabAtual_ === 'alertas') setTimeout(_popularAlertasPersonalizados_, 0);
+            // V3.40 — Rodada 4 (3F): idem pra aba "Personalização" — inicializa e renderiza as 3 áreas
+            // inline (Etapas e Categorias, Menus e Seções, Contratos) sem abrir nada.
+            if (window._centralConfigTabAtual_ === 'personalizacao') setTimeout(_initPersonalizacaoTab_, 0);
         }
         function _centralConfigIrPara_(key) {
             window._centralConfigTabAtual_ = key;
@@ -15237,6 +15296,7 @@
             if (key === 'empresa') setTimeout(openSettingsModal, 0);
             if (key === 'integracao') setTimeout(openAppConfigModal, 0); // V3.37 — Rodada 4 (3C)
             if (key === 'alertas') setTimeout(_popularAlertasPersonalizados_, 0); // V3.39 — Rodada 4 (3E)
+            if (key === 'personalizacao') setTimeout(_initPersonalizacaoTab_, 0); // V3.40 — Rodada 4 (3F)
         }
         // V3.35 — snapshot (não ao vivo) do status de sincronização pro rodapé da Central de
         // Configurações — lê os mesmos localStorage que updateSyncUI()/atualizarStatusFirestoreUI_() já
@@ -15324,9 +15384,7 @@
                     _renderAlertasTabContent_();
             } else if(atual === 'personalizacao') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Personalização</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Etapas e Categorias, Menus e Seções (Barra Lateral) e Contratos.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3F.</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+                    _renderPersonalizacaoTabContent_();
             } else if(atual === 'avancado') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Avançado</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">LGPD — Dados de um Titular, Sincronização e Restaurar Configurações de Fábrica.</div>'+
@@ -16551,24 +16609,18 @@
                              "Alertas Personalizáveis (prazo/limite)" REMOVIDOS daqui -- migrados pra aba
                              "Alertas" da Central de Configurações (evita ids duplicados no DOM). -->
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
+                        <!-- V3.37 -- 13/07/2026 (Rodada 4, 3C): card "Integração com Firestore" (campo
                              settFirestoreEmpresaId) REMOVIDO daqui -- migrado pra aba "Integração" da
                              Central de Configurações (evita 2 elementos com o mesmo id no DOM). -->
 
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Etapas e Categorias</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('etapas')">${ICON_AJUDA_SVG_14}</button></div>
-                            <button class="btn-secondary" onclick="abrirModalEtapasCategorias()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>Gerenciar Etapas e Categorias</button>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Personalização de Contratos</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('contratos')">${ICON_AJUDA_SVG_14}</button></div>
-                            <button class="btn-secondary" onclick="abrirPersonalizacaoContratos()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>Personalização de Contratos</button>
-                        </div>
-
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Barra Lateral</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('barraLateral')">${ICON_AJUDA_SVG_14}</button></div>
-                            <button class="btn-secondary" onclick="abrirGerenciarMenuModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>Gerenciar Seções do Menu</button>
-                        </div>
+                        <!-- V3.40 -- 13/07/2026 (Rodada 4, 3F): cartões "Etapas e Categorias",
+                             "Personalização de Contratos" e "Barra Lateral" REMOVIDOS daqui -- migrados
+                             pra aba "Personalização" da Central de Configurações, com o formulário de
+                             verdade dentro da aba (não mais um botão pra abrir outra janela). A função
+                             abrirGerenciarMenuModal() (usada só por este botão) foi removida; nenhum
+                             outro lugar do app a chamava. abrirModalEtapasCategorias()/
+                             abrirPersonalizacaoContratos() continuam existindo (a segunda ainda é usada
+                             pelo atalho "Personalização de Contratos" dentro de Gerar Contrato). -->
 
                         <!-- V3.38 -- 13/07/2026 (Rodada 4, 3D): cartões "Exportação Automática", "Backup
                              Diário Automático", "Importação em Massa", "Restaurar Base a partir de um
@@ -23754,7 +23806,9 @@
             };
             renderModalEtapasCategorias();
         }
-        function fecharModalEtapasCategorias() { _etapasDraft = null; closeGenericModal('modalEtapasCategoriasOverlay'); }
+        // V3.40 — 13/07/2026 (Rodada 4, 3F): sem modal próprio pra fechar mais — usado pelo botão
+        // "Descartar Alterações" pra reconstruir o rascunho a partir dos dados salvos de verdade.
+        function fecharModalEtapasCategorias() { abrirModalEtapasCategorias(); }
         const _BTN_MINI = 'width:22px; height:19px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-card-hover); cursor:pointer; font-size:10px; line-height:1; color:var(--text-secondary); padding:0;';
 
         function _linhaEtapaGenerica(tipo, idx, nome, protegida, bloqueioExclusao, podeSubir, podeDescer) {
@@ -23818,16 +23872,20 @@
                     '<div style="display:flex; gap:6px;"><input type="text" class="input-element" id="novaEtapaInput_'+tipoAdd+'" placeholder="'+placeholder+'" style="flex:1; font-size:12.5px;"><button class="btn-secondary" onclick="adicionarEtapaDraft(\''+tipoAdd+'\')">+ Adicionar</button></div>'+
                     '</div>';
             };
-            const html = '<div class="modal-header-title" style="margin-bottom:6px;">🧩 Gerenciar Etapas e Categorias</div>'+
+            const html = '<div class="form-section-title" style="margin-top:0; font-size:14px;">Etapas e Categorias</div>'+
                 '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:16px;">As mudanças só valem depois de clicar em "Salvar Alterações". Itens com 🔒 são usados em automações do sistema (lançamentos financeiros automáticos, contagem de projetos ativos/atrasados etc.) e por isso não podem ser renomeados nem excluídos — só reordenados.</div>'+
                 secao('Etapas de Projeto', 'Usadas no Kanban de Projetos e no filtro de etapa.', htmlProj, 'proj', 'Nome da nova etapa...')+
                 secao('Categorias de Projeto', 'Usadas ao cadastrar Projeto e Proposta/Orçamento.', htmlCat, 'cat', 'Nome da nova categoria...')+
                 secao('Etapas do Funil de Leads (Comercial)', '"No Radar" (primeira) e as 3 etapas finais (Conquistados/Perdidos/Sem Resposta) têm posição fixa, mas podem ser renomeadas. Nas demais, dá pra configurar os intervalos de follow-up automático (em dias).', htmlCrm, 'crm', 'Nome da nova etapa do funil...')+
-                '<div class="modal-buttons-row">'+
-                '<button class="btn-secondary" onclick="fecharModalEtapasCategorias()">Cancelar</button>'+
+                '<div class="modal-buttons-row" style="justify-content:flex-start;">'+
+                '<button class="btn-secondary" onclick="fecharModalEtapasCategorias()">Descartar Alterações</button>'+
                 '<button class="btn-primary" onclick="salvarEtapasCategoriasDraft()">Salvar Alterações</button>'+
                 '</div>';
-            openGenericModal('modalEtapasCategoriasOverlay', html, true);
+            // V3.40 — 13/07/2026 (Rodada 4, 3F): esta função escrevia num modal próprio
+            // (#modalEtapasCategoriasOverlay) — agora escreve direto no contêiner da aba "Personalização"
+            // da Central de Configurações (pedido do cliente: nada de abrir outra janela pra personalizar).
+            const container = document.getElementById('personalizacaoEtapasArea');
+            if (container) { container.innerHTML = html; }
         }
         function moverEtapaDraft(tipo, idx, dir) {
             const lista = tipo==='proj' ? _etapasDraft.projStages : tipo==='cat' ? _etapasDraft.categorias : _etapasDraft.crmStages;
@@ -30589,7 +30647,42 @@
             switchTab('personalizacao-contratos');
         }
         function fecharPersonalizacaoContratos() { switchTab('config-avancada'); }
-        function switchPersContratosSubTab(k) { state.persContratosSubTab = k; renderDynamic(); }
+        function switchPersContratosSubTab(k) {
+            state.persContratosSubTab = k;
+            // V3.40 — 13/07/2026 (Rodada 4, 3F): se a Central de Configurações > Personalização estiver
+            // aberta (contêiner inline presente), atualiza só ele; senão mantém o comportamento antigo
+            // (página cheia "personalizacao-contratos", acessada pelo atalho em Gerar Contrato).
+            const inlineArea = document.getElementById('personalizacaoContratosArea');
+            if (inlineArea) { inlineArea.innerHTML = _renderPersonalizacaoContratosInline_(); }
+            else { renderDynamic(); }
+        }
+        // V3.40 — 13/07/2026 (Rodada 4, 3F): mesmo conteúdo de renderPersonalizacaoContratosPage(), só que
+        // sem o cabeçalho de página/botão "← Voltar" — usado dentro da aba "Personalização" da Central de
+        // Configurações. renderPersContratosRegras()/Variaveis()/Blocos() são as mesmas, intactas.
+        function _renderPersonalizacaoContratosInline_() {
+            const sub = state.persContratosSubTab || 'regras';
+            return `
+                <div class="modal-tabs">
+                    <div class="modal-tab ${sub==='regras'?'active':''}" onclick="switchPersContratosSubTab('regras')">Regras de Modelo</div>
+                    <div class="modal-tab ${sub==='variaveis'?'active':''}" onclick="switchPersContratosSubTab('variaveis')">Variáveis Personalizadas</div>
+                    <div class="modal-tab ${sub==='blocos'?'active':''}" onclick="switchPersContratosSubTab('blocos')">Blocos Condicionais</div>
+                </div>
+                <div style="margin-top:16px;">
+                    ${sub==='regras' ? renderPersContratosRegras() : (sub==='variaveis' ? renderPersContratosVariaveis() : renderPersContratosBlocos())}
+                </div>`;
+        }
+        // V3.40 — prepara o mesmo estado que abrirPersonalizacaoContratos() prepara (regras/variáveis/
+        // blocos em rascunho), só que sem navegar pra nenhuma página — escreve direto no contêiner.
+        function _initPersonalizacaoContratosInline_() {
+            initContratos();
+            if(!state.persContratosSubTab) state.persContratosSubTab = 'regras';
+            const regrasSalvas = obterRegrasModeloContrato();
+            state.currentRegrasModeloContrato = regrasSalvas.length ? JSON.parse(JSON.stringify(regrasSalvas)) : regrasModeloContratoPadrao();
+            state.currentVariaveisPersonalizadas = JSON.parse(JSON.stringify(obterVariaveisPersonalizadas()));
+            state.currentBlocosCondicionaisPersonalizados = JSON.parse(JSON.stringify(obterBlocosCondicionaisPersonalizados()));
+            const container = document.getElementById('personalizacaoContratosArea');
+            if (container) container.innerHTML = _renderPersonalizacaoContratosInline_();
+        }
         function renderPersonalizacaoContratosPage() {
             const sub = state.persContratosSubTab || 'regras';
             return `
