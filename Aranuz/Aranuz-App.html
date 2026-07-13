@@ -3316,6 +3316,13 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        // V3.41 — 13/07/2026 (Rodada 4, Central de Configurações 3G): aba "Avançado" migrada de verdade —
+        // Checklist de Saúde do App, Sincronização e Restaurar Configurações de Fábrica. Com esta
+        // sub-rodada, a reconstrução da Central de Configurações iniciada em 3A está CONCLUÍDA — todas as
+        // abas de CONFIGURAÇÕES têm conteúdo próprio, nenhuma abre mais a página "Configurações
+        // Avançadas" (que continua existindo só pra Campos Personalizados, LGPD e Backend .gs — pendente
+        // de mover pra "Geral", numa rodada futura). A partir desta versão, os arquivos passam a ser
+        // nomeados com a versão primeiro (ex: V3.41_Aranuz-App.html), a pedido do cliente.
         // V3.40 — 13/07/2026 (Rodada 4, Central de Configurações 3F): aba "Personalização" migrada de
         // verdade — Etapas e Categorias, Menus e Seções e Contratos (Regras/Variáveis/Blocos) com o
         // formulário completo dentro da aba, sem nenhum botão pra abrir outra janela (pedido explícito do
@@ -3343,7 +3350,7 @@
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.40';
+        const FRONTEND_VERSION = '3.41';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -8795,7 +8802,7 @@
                 <p><strong>Links:</strong> os 3 formulários (Cadastro de Cliente, Cadastro de Fornecedor, Pesquisa de Satisfação/NPS) ficam aqui, na Empresa — os demais links (planilha, Drive, NFSe, cobrança, Agenda) ficam em Configurações do App (ver abaixo).</p>
                 <p><strong>Alertas Personalizados</strong> (Central de Configurações &gt; Alertas): crie avisos mensais recorrentes personalizados (nome, descrição, dia do mês, habilitado/desabilitado) — cada um aparece sozinho no card "Precisa de Atenção Agora" conforme o dia configurado se aproxima.</p>
                 <p><strong>Alertas Automáticos do Sistema</strong> (Central de Configurações &gt; Alertas): são avisos que o sino do topo gera sozinho, sem cadastro manual, cada um desligável individualmente conforme o que fizer sentido pra rotina da equipe. São 15 com prazo fixo: orçamento aprovado sem projeto vinculado (3+ dias), contrato parado em Rascunho (5+ dias), locação de equipamentos atrasada, projeto ativo com prazo vencido, novo lead com origem "site", cachê ou imposto de folha pendente já vencido, pagamento a fornecedor a vencer em 3 dias, aquisição de equipamento urgente parada há 15+ dias, lead ativo sem Próxima Ação definida, entregável com prazo em até 3 dias ainda em Stand By/Produção, orçamento aprovado sem contrato gerado (5+ dias), proposta enviada sem resposta do cliente (7+ dias), falha na execução do Backup Diário Automático, sincronização com a planilha parada há mais de 24h, e aniversário de contato de cliente nos próximos 3 dias. Mais 3 <strong>alertas com limite personalizável</strong> (em vez de prazo fixo no código): os 2 <strong>Alertas Culturais</strong> (V2.64) — Prestação de Contas a vencer (padrão: 7 dias de antecedência) e Resultado de Edital se aproximando (padrão: avisa 15, 10, 5 dias antes e no dia — os "checkpoints" são editáveis, separados por vírgula) — e o <strong>Alerta de Concentração de Cliente</strong> (V2.66), que avisa quando um cliente passa de um percentual da receita dos últimos 12 meses (padrão: 40%, mesmo limite já usado como referência visual no indicador equivalente do Raio-X).</p>
-                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados) e Personalização (Etapas e Categorias, Menus e Seções, Contratos) já têm conteúdo próprio dentro da Central, sem abrir nenhuma janela separada; só Avançado ainda abre a página "Configurações Avançadas" por um botão, enquanto essa última migração não termina — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
+                <p><em>Central de Configurações</em> (ícone de engrenagem, único botão de configurações no cabeçalho) reúne tudo em duas seções de abas — <strong>CONFIGURAÇÕES</strong>: Geral (Informações da Conta, Aparência, Segurança de Acesso, Aprovação de Orçamentos Altos, Itens Excluídos/Lixeira, Checklist de Saúde do App), Produtora/Empresa, Integração (links da planilha/Drive/NFSe/Cobrança/Agenda/APIs e Integração com Firestore), Importação, Exportação e Backups (Importação em Massa, Importar/Exportar Configurações, Restaurar Base a partir de um Backup, Backup Diário Automático, Exportação Automática, Exportar Dados), Alertas (Alertas Automáticos do Sistema, Alertas Personalizáveis, E-mails e Alertas, Alertas Personalizados), Personalização (Etapas e Categorias, Menus e Seções, Contratos) e Avançado (Checklist de Saúde do App, Sincronização, Restaurar Configurações de Fábrica) — todas com conteúdo próprio dentro da Central, sem abrir nenhuma janela separada — e <strong>AJUDA</strong>: Atalhos de Teclado, Novidades do Aranuz e este Manual. Um rodapé fixo no fim da janela mostra o status de sincronização e a versão do app.</p>
                 <p><strong>Menus e Seções</strong> (Central de Configurações &gt; Personalização) deixa esconder seções inteiras da barra lateral (ex: "Recursos e Operacional") ou só telas específicas dentro delas (ex: só "Time-Tracker") — útil quando a equipe não usa algum módulo. Esconder uma seção inteira também some com a aba correspondente em Inteligência de Negócios.</p>
                 <p>No fim de Configurações Avançadas, o botão <strong>Restaurar Configurações de Fábrica</strong> apaga todos os links/dados de configuração (exige digitar "EXCLUIR" para confirmar, por ser uma ação sem volta) — cada campo volta em branco, com uma única exceção: o link do Emissor Nacional de NFSe volta ao padrão público. Os dados cadastrados (clientes, projetos etc.) não são afetados, só as configurações.</p>
                 <p style="color:var(--text-secondary); font-size:12px;">💡 Esses links e dados de identidade ficam guardados na própria planilha — valem pra qualquer pessoa que acesse o app. Já a URL da API/AppWeb fica só neste navegador (ver "Segurança" abaixo pra entender por quê).</p>` } ,
@@ -15168,6 +15175,10 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.41', data: '13/07/2026', itens: [
+                'Central de Configurações — aba "Avançado": Checklist de Saúde do App, Sincronização e Restaurar Configurações de Fábrica com conteúdo próprio. Com isso, a reconstrução da Central de Configurações (rodadas 3A a 3G) está concluída — todas as abas de CONFIGURAÇÕES têm conteúdo inline, nenhuma abre mais "Configurações Avançadas".',
+                'Nomenclatura dos arquivos passa a começar pelo número da versão (ex: V3.41_Aranuz-App.html), a partir desta versão.'
+            ]},
             { versao: '3.40', data: '13/07/2026', itens: [
                 'Central de Configurações — aba "Personalização": Etapas e Categorias, Menus e Seções e Contratos agora têm o formulário completo dentro da própria aba — nenhum botão abre outra janela.',
                 'Personalização de Contratos (Regras de Modelo, Variáveis Personalizadas, Blocos Condicionais) funciona 100% inline dentro da aba, incluindo adicionar/remover itens.'
@@ -15387,9 +15398,7 @@
                     _renderPersonalizacaoTabContent_();
             } else if(atual === 'avancado') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Avançado</div>'+
-                    '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">LGPD — Dados de um Titular, Sincronização e Restaurar Configurações de Fábrica.</div>'+
-                    '<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Esta aba ainda abre a janela separada — migração planejada pra sub-rodada 3G.</div>'+
-                    '<button type="button" class="btn-primary" onclick="closeGenericModal(\'modalCentralConfigOverlay\'); switchTab(\'config-avancada\');">Abrir Configurações Avançadas</button>';
+                    _renderAvancadoTabContent_();
             } else if(atual === 'manual') {
                 conteudo = '<div style="font-size:14px; font-weight:700; margin-bottom:10px;">Manual de Uso do Aranuz</div>'+
                     '<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Guia completo de cada tela e recurso do app.</div>'+
@@ -15429,6 +15438,29 @@
                 '<div class="modal-buttons-row" style="margin-top:10px; flex-shrink:0;"><button class="btn-secondary" onclick="closeGenericModal(\'modalCentralConfigOverlay\')">Fechar</button></div>';
         }
 
+        // V3.41 — 13/07/2026 (Rodada 4, Central de Configurações 3G): conteúdo real da aba "Avançado" —
+        // Checklist de Saúde do App (atalho pro mesmo modal já usado em Geral), Sincronização (retry
+        // automático) e Restaurar Configurações de Fábrica. Reaproveita 100% funções já existentes;
+        // settRetryFirestoreAutomatico populado por popularCamposConfigAvancada, sem wiring extra.
+        function _renderAvancadoTabContent_() {
+            return `
+                <div style="display:flex; flex-direction:column; gap:20px; max-width:640px;">
+                    <div>
+                        <div class="form-section-title" style="margin-top:0; font-size:14px;">Checklist de Saúde do App</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Roda sozinho a cada carregamento do app e avisa no sino se algo estiver quebrado. Clique abaixo pra rodar uma verificação manual agora.</div>
+                        <button type="button" class="btn-secondary" onclick="abrirChecklistSaudeModal_()">Rodar Verificação Agora</button>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div class="form-section-title" style="margin-top:0; font-size:14px;">Sincronização</div>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRetryFirestoreAutomatico" onchange="toggleRetryFirestoreAutomatico(this.checked)"> Tentar novamente automaticamente em falhas pontuais de conexão com o Firestore</label>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div class="form-section-title" style="margin-top:0; font-size:14px; color:var(--accent-red);">Zona de Risco</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Apaga TODOS os links e dados de Configurações da Empresa e do App (não afeta os dados cadastrados). Não pode ser desfeita.</div>
+                        <button type="button" class="btn-secondary danger" onclick="restaurarConfiguracoesFabrica()">⚠️ Restaurar Configurações de Fábrica</button>
+                    </div>
+                </div>`;
+        }
         function abrirChangelogModal() {
             const html = '<div class="modal-header-title" style="margin-bottom:6px;">🆕 Novidades do Aranuz</div>'+
                 '<div style="font-size:11px; color:var(--text-secondary); margin-bottom:16px;">Histórico a partir da versão 3.17 — versões anteriores não foram reconstruídas retroativamente.</div>'+
@@ -16558,13 +16590,8 @@
                             <button class="btn-secondary" onclick="copiarCodigoWebApp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>Copiar Código AppScript (.gs)</button>
                         </div>
 
-                        <!-- V3.17: card novo — robustez de sincronização (item 5 da lista de sugestões:
-                             retry automático em falhas de conexão com o Firestore, desativado por
-                             padrão). -->
-                        <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-card);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Sincronização</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('retrySync')">${ICON_AJUDA_SVG_14}</button></div>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input type="checkbox" class="chk-toggle-claude" id="settRetryFirestoreAutomatico" onchange="toggleRetryFirestoreAutomatico(this.checked)"> Tentar novamente automaticamente em falhas pontuais de conexão com o Firestore</label>
-                        </div>
+                        <!-- V3.41 -- 13/07/2026 (Rodada 4, 3G): cartão "Sincronização" REMOVIDO daqui --
+                             migrado pra aba "Avançado" da Central de Configurações. -->
 
                         <!-- V3.39 -- 13/07/2026 (Rodada 4, 3E): cartão "E-mails e Alertas" REMOVIDO daqui
                              -- migrado pra aba "Alertas" da Central de Configurações. -->
@@ -16628,10 +16655,9 @@
                              aba "Importação, Exportação e Backups" da Central de Configurações (evita
                              elementos com o mesmo id duplicados no DOM). -->
 
-                        <div style="border:1px solid var(--accent-red); border-radius:10px; padding:16px; background:var(--bg-card); grid-column:1 / -1;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;"><div style="font-size:14px; font-weight:700; color:var(--text-primary);">Zona de Risco</div><button type="button" class="icon-btn" style="width:26px; height:26px; flex-shrink:0;" title="Ajuda" onclick="abrirAjudaConfigAvancada('zonaRisco')">${ICON_AJUDA_SVG_14}</button></div>
-                            <button class="btn-secondary danger" onclick="restaurarConfiguracoesFabrica()">⚠️ Restaurar Configurações de Fábrica</button>
-                        </div>
+                        <!-- V3.41 -- 13/07/2026 (Rodada 4, 3G): cartão "Zona de Risco" (Restaurar
+                             Configurações de Fábrica) REMOVIDO daqui -- migrado pra aba "Avançado" da
+                             Central de Configurações. -->
 
                     </div>
 
