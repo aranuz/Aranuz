@@ -1,6 +1,10 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_48.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_49.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
+ * V3.49 — 13/07/2026 (Rodada 8): só pareamento — nenhuma mudança neste arquivo. A reforma de UI/UX da
+ * Central de Configurações (Atalhos Rápidos, cartões nas abas Integração/Importação-Exportação-Backups/
+ * Alertas/Personalização/Avançado, Manual de Uso inline, rodapé da barra lateral) é 100% front-end (App)
+ * — nenhuma rota, coluna ou formato de dado novo aqui.
  * V3.48 — 13/07/2026 (Rodada 7, item 8): só pareamento — nenhuma mudança neste arquivo. "Excluir Dados"
  * (individual ou em massa) usa o mesmo mecanismo de soft-delete/Lixeira que já existia (moverParaLixeira_,
  * front-end) — os registros saem da coleção normal e a sincronização de sempre (saveDb/_flushDb) reflete
@@ -315,7 +319,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.48"; // V3.48 — 13/07/2026 (Rodada 7): só pareamento — ver changelog no topo do arquivo.
+var BACKEND_VERSION = "3.49"; // V3.49 — 13/07/2026 (Rodada 8): só pareamento — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.
