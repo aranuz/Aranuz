@@ -1,8 +1,14 @@
 /*************************************************************************
- * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com V3.41_Aranuz-App.html — VERSÃO ATUAL DESTE ARQUIVO]
+ * ARANUZ — APPS SCRIPT COLUNAR (v10) [pareado com Aranuz_App_V3_43.html — VERSÃO ATUAL DESTE ARQUIVO]
  * >>> ÚNICO ARQUIVO .gs DO PROJETO. <<<
- * V3.41 — 13/07/2026 (Rodada 4): só pareamento — aba "Avançado" da Central de Configurações (3G) é
- * 100% front-end (App), nenhuma rota/coluna nova. Central de Configurações CONCLUÍDA (3A a 3G).
+ * V3.43 — 13/07/2026 (Rodada 2): só pareamento — o BUGFIX de "Restaurar Base a partir de um Backup"
+ * desta rodada foi só de front-end (mensagem de erro mais clara em importarBackupParaFirebase(), ver
+ * App). O erro "Unexpected token '<'" em si (Google devolvendo HTML em vez de JSON quando o backup é
+ * grande demais e a execução estoura o limite de tempo do Apps Script, ~6min) segue existindo pra
+ * backups muito grandes — resolver isso de vez exigiria reescrever importarDadosDeBackup_()/doGet()
+ * pra ler a planilha em pedaços ao longo de várias chamadas (reaproveitando o parâmetro "secoes", que
+ * já existe pra sincronização normal) — mudança maior, cliente ciente e vai confirmar se quer pra
+ * próxima rodada.
  * V3.40 — 13/07/2026 (Rodada 4): só pareamento — aba "Personalização" da Central de Configurações
  * (3F) é 100% front-end (App), nenhuma rota/coluna nova.
  * V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba "Alertas" da Central de Configurações (3E) é
@@ -289,8 +295,7 @@ function obterGoogleCseCx_() { return obterConfigValor_('googleCseCx', ''); }
 // V3.08 — 11/07/2026: BLOCO FORNECEDOR — idem, sincronizado (a mudança de CEP/reordenação de campos
 // desta versão é só de front-end/planilha-modelo; FORN_COLS ganhou um comentário marcando "cep" como
 // mantida só por compatibilidade, valor novo não é mais gravado nela — ver comentário junto ao array).
-var BACKEND_VERSION = "3.41"; // V3.41 — 13/07/2026 (Rodada 4): só pareamento — aba Avançado (3G) é 100% front-end. Central de Config. concluída.
-// V3.40 — 13/07/2026 (Rodada 4): só pareamento — aba Personalização (3F) é 100% front-end.
+var BACKEND_VERSION = "3.43"; // V3.43 — 13/07/2026 (Rodada 2): só pareamento — ver changelog no topo do arquivo.
 // V3.39 — 13/07/2026 (Rodada 4): só pareamento — aba Alertas (3E) é 100% front-end.
 // V3.38 — 13/07/2026 (Rodada 4): só pareamento — aba Import./Export./Backups (3D) é 100% front-end.
 // V3.37 — 13/07/2026 (Rodada 4): só pareamento — aba Integração (3C) é 100% front-end.

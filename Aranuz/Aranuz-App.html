@@ -3326,6 +3326,14 @@
         // versão. As 6 primeiras abas de CONFIGURAÇÕES já têm conteúdo próprio de verdade (migrado de
         // Configurações Avançadas, removido de lá); as demais ainda abrem a janela antiga por um botão,
         // até as próximas sub-rodadas (3B em diante) migrarem cada uma.
+        // V3.43 — 13/07/2026 (Rodada 2, pedido do cliente — backend/regras): (1) BUGFIX de diagnóstico
+        // em "Restaurar Base a partir de um Backup" — a mensagem crua "Unexpected token '<'" virou uma
+        // explicação de verdade (backup grande demais + limite de execução do Google, ou implantação do
+        // .gs precisa ser refeita) — ver importarBackupParaFirebase(); (2) pareado com
+        // Aranuz_V3.43_Backend.gs e Regras_Firebase_V3.43.txt — reportsUsuarios já tinha a Regra certa no
+        // arquivo enviado pelo cliente (só faltava publicar no Console do Firebase); Regras endureceram
+        // propostasPublicas (get liberado, list bloqueado — evita listar todas as propostas públicas de
+        // uma vez). Import. em massa/logo/lixeira por menu/etc. ficam para a Rodada 3.
         // V3.42 — 13/07/2026 (Rodada 1, pedidos do cliente — bugs críticos): (1) removidos os 9 modelos
         // de contrato embutidos de fábrica (ver initContratos()); (2) BUGFIX GRAVE — Configurações da
         // Empresa e do App nunca eram espelhadas no Firestore, e podiam ser apagadas silenciosamente por
@@ -3368,7 +3376,7 @@
         // aba, com o modal próprio antigo (#modalSettingsOverlay) removido (não duplicado). Removidas
         // também as Preferências Gerais (idioma/fuso/moeda) da aba Geral, a pedido do cliente —
         // desnecessárias.
-        const FRONTEND_VERSION = '3.42';
+        const FRONTEND_VERSION = '3.43';
         // 2.66 — Segunda lista de sugestões (Marketing e Gestão de Projetos Culturais): aceitas todas,
         // exceto o item 8 (Central de vencimentos cruzando Contratos + Licenças culturais, não implementado
         // nesta rodada). Ver Aranuz_Segunda_Lista_Sugestoes.md e Aranuz_Terceira_Lista_Sugestoes.md (20 novas
@@ -9885,7 +9893,22 @@
             let dados;
             try {
                 const res = await fetch(getSheetsUrl() + '&importarOrigemUrl=' + encodeURIComponent(origemUrl) + '&t=' + Date.now(), { cache: 'no-store' });
-                const out = await res.json();
+                // V3.43 — 13/07/2026 (Rodada 2, pedido do cliente): BUGFIX de diagnóstico — antes,
+                // "res.json()" jogava o erro genérico do navegador ("Unexpected token '<'...") sempre que
+                // o Apps Script devolvia HTML em vez de JSON (o caso mais comum: backup grande demais e o
+                // Google encerra a execução no limite de tempo dele, ~6min, antes de terminar de ler as
+                // ~24 áreas — ver importarDadosDeBackup_() no .gs). Agora lê como texto primeiro e só
+                // depois tenta interpretar como JSON, pra poder dar um diagnóstico que explique o que
+                // realmente aconteceu, em vez do erro cru do navegador.
+                const textoResp = await res.text();
+                let out;
+                try { out = JSON.parse(textoResp); }
+                catch(eParse) {
+                    const pareceHtml = /^\s*<(!doctype|html)/i.test(textoResp);
+                    throw new Error(pareceHtml
+                        ? 'O Google não devolveu os dados — devolveu uma página (HTML) em vez da resposta esperada. Na maioria das vezes isso acontece porque a planilha de backup é grande demais e o Google interrompeu a leitura antes de terminar (limite de execução do Google, de uns 6 minutos). Tente um backup menor ou peça pra quem mantém o app conferir a implantação do .gs.'
+                        : 'Resposta inesperada do servidor (não veio no formato esperado): ' + textoResp.slice(0, 200));
+                }
                 if(out.status !== 'sucesso') throw new Error(out.detalhe || 'erro desconhecido ao ler a planilha de backup.');
                 dados = out.dados;
             } catch(e) {
@@ -15233,6 +15256,10 @@
         // viável nem realista; o valor está em manter isto atualizado DAQUI PRA FRENTE. Mais recente
         // primeiro.
         const CHANGELOG_APP = [
+            { versao: '3.43', data: '13/07/2026', itens: [
+                'Bugfix: "Restaurar Base a partir de um Backup" agora explica de verdade o que deu errado (em vez do erro cru "Unexpected token") quando a planilha de backup é grande demais e o Google interrompe a leitura.',
+                'Regras de segurança do Firestore revisadas: o link de Proposta Pública agora não pode mais ser listado por inteiro por terceiros (continua funcionando normalmente para quem tem o link).'
+            ]},
             { versao: '3.42', data: '13/07/2026', itens: [
                 'Removidos os modelos de contrato que vinham prontos de fábrica — agora "Personalização > Contratos > Modelos" começa em branco, e você cria só os modelos que usa.',
                 'Bugfix importante: Configurações da Empresa e Configurações do App (em Central de Configurações) agora são salvas de verdade na nuvem (Firestore) — antes só ficavam na planilha, e em alguns casos podiam ser apagadas sem aviso se a planilha demorasse para responder.',

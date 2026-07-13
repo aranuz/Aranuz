@@ -3,15 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================
-    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.34 (13/07/2026, Rodada 2)
-    // Pareada com Aranuz_App_V3_34.html / Aranuz_Sheets-Usuario_V3_34.gs / Aranuz_Admin_V3_34.html.
-    // Mudanças desta versão: nova coleção reportsUsuarios (botão "Reportar Erro/Melhoria" do
+    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.43 (13/07/2026, Rodada 2)
+    // Pareada com Aranuz_App_V3_43.html / Aranuz_Backend_V3_43.gs / Aranuz_Admin_V3_42.html.
+    // Mudanças desta versão: (1) IMPORTANTE — "reportsUsuarios" (linha abaixo) já estava correta
+    // desde a V3.34, mas o erro "Missing or insufficient permissions" no Painel de Administração
+    // indica que esta versão (ou uma mais nova) nunca chegou a ser PUBLICADA de fato no Console do
+    // Firebase — publique este arquivo (ver "COMO PUBLICAR" abaixo) pra resolver; (2) "propostasPublicas"
+    // endurecida — antes permitia "read" (get + list) pra qualquer um; agora só permite buscar UM
+    // link específico (get), e bloqueia listar a coleção inteira (list) — o app só usa .doc(token).get(),
+    // então nada muda pra quem já usa o link normalmente.
+    // V3.34: nova coleção reportsUsuarios (botão "Reportar Erro/Melhoria" do
     // cabeçalho do App) — qualquer autenticado cria, só o admin lê/apaga.
     // V3.32: delete liberado em logsResetsAdmin/logsExclusoesAdmin/logsTentativasAdmin/
     // logsErrosApp (Retenção de Logs) + coleção notasInternasEmpresa (Notas Internas).
     // Reforça as ações administrativas do Painel de Administração (Resetar
     // Banco de Dados / Excluir Usuário) com permissão checada no SERVIDOR,
     // não só a confirmação de texto na tela.
+    //
+    // OBSERVAÇÃO (não alterada nesta versão — avaliar com o cliente): "alertasEmailEnviados" libera
+    // "read" pra qualquer usuário autenticado, de qualquer empresa (não só a própria) — hoje isso só
+    // expõe se um alerta já foi enviado (chave técnica), não dado de negócio, mas foge do padrão
+    // "só a própria empresa" usado em todo o resto. Restringir por empresaId exigiria mudar o
+    // formato do docId ou adicionar um campo "empresaId" e checar contra ele — posso fazer numa
+    // próxima rodada se o cliente confirmar que quer restringir isso também.
     //
     // COMO PUBLICAR:
     // 1. Abra console.firebase.google.com > seu projeto (aranuz-6c80c) > Firestore Database > aba "Regras".
@@ -219,11 +233,16 @@ service cloud.firestore {
     // ------------------------------------------------------------
     // Portal de Orçamento/Proposta pública (sem login) — já existente
     // ------------------------------------------------------------
-    // Mantém o comportamento já usado hoje: leitura/gravação pública, restrita
-    // a um token específico (o link enviado ao cliente) — ajuste aqui se seu
-    // fluxo público já usa uma regra diferente desta.
+    // V3.43 — 13/07/2026 (Rodada 2, revisão de segurança pedida pelo cliente): "allow read: if true"
+    // também libera "list" (não só "get") — ou seja, além de qualquer um poder buscar UMA proposta
+    // sabendo o token (o uso normal do link), também dava pra listar a COLEÇÃO INTEIRA de propostas
+    // públicas de uma vez, sem token nenhum (bastava saber a config pública do Firebase, que já vem
+    // embutida no HTML de qualquer jeito). Corrigido: "get" continua liberado (o app só usa
+    // .doc(token).get(), então nada muda no uso normal), "list" bloqueado.
     match /propostasPublicas/{token} {
-      allow read, write: if true;
+      allow get: if true;
+      allow list: if false;
+      allow write: if true;
     }
 
     // Qualquer coisa fora do que foi listado acima fica bloqueada por padrão
