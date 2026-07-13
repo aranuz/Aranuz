@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Aranuz · Painel de Administração</title>
+<!-- V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): "Tentativas de Acesso Negadas" e "Log de Acesso
+     Geral" viraram UMA "Central de Auditoria" só, misturando eventos de usuário + resets + exclusões +
+     tentativas negadas, com filtro por empresa, busca e exportação CSV. Novo card "Retenção de Logs"
+     (limpeza manual sob demanda, sem cron). Novo botão "📝 Notas Internas" no card de cada usuário
+     (texto livre por empresa, só o admin vê). -->
+<!-- V3.31 — 13/07/2026 (Rodada 3A, Monitoramento e Saúde): 4 cards novos/ajustados — "Uso do Firestore
+     por Empresa" agora ordena por maior uso e mostra Top 10 (com opção "Ver todas"); "Crescimento e
+     Atividade" (gráfico de cadastros por semana + empresas ativas sem login recente); "Saúde do Sistema"
+     (status do Firestore + erros recentes reportados pelo próprio app, com destaque pra possível
+     problema de planilha/sincronização); "Ranking por Volume de Dados" (contagem agregada de registros
+     por empresa, sob demanda). -->
+<!-- V3.30 — 13/07/2026 (Rodada 2B, Sistema de Licenças): a partir desta versão o Admin passa a
+     compartilhar o MESMO número de versão do App/GS/Regras (antes tinha numeração própria). Mudanças:
+     aba "Vencidas" (status suspensoPorVencimento, separado de "desabilitado"); aviso de licenças
+     vencendo em breve + renovação em lote; destaque quando o usuário pede renovação pelo próprio App;
+     licença padrão de novo usuário formalizada em 30 dias (LICENCA_DIAS_PADRAO_NOVO_USUARIO). -->
+<!-- V2.96 — 12/07/2026: favicon/apple-touch-icon com o logo próprio do Aranuz (aranuz.com), esta página nunca teve ícone configurado antes. -->
+<link rel="icon" href="https://aranuz.com/Aranuz_logo@1920x.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="https://aranuz.com/Aranuz_logo@1920x.png" />
+<!-- V2.97 — 12/07/2026: novo e-mail de administrador — a checagem de acesso desta página (mais abaixo, via
+     Regras de Segurança do Firestore) passou a exigir 'aranuzworkspace@gmail.com' em vez de 'mhub@gmail.com',
+     a pedido do cliente, agora que existe a conta Google Workspace própria do Aranuz. Ver
+     firestore_regras_sugeridas.txt para a mudança nas Regras. -->
+<!-- V2.100 — 13/07/2026: rodada de melhorias no Painel (8 sugestões aceitas pelo cliente):
+     (1) botão "Trocar empresa" pra usuário já ativo; (2) administradores adicionais, gerenciáveis por aqui
+     (config/admins), além do e-mail de fábrica; (4) busca/filtro na lista; (6) exportar CSV; (7) reenviar
+     e-mail de redefinição de senha; (8) cada evento do histórico agora registra QUEM (qual administrador)
+     tomou a ação; (9) resumo de uso do Firestore agregado por empresa; (10) registro de tentativas de login
+     negadas. A checagem de acesso (verificarEAbrirPainel, mais abaixo) também mudou: em vez de comparar o
+     e-mail logado contra uma constante fixa, ela tenta a mesma operação que só um administrador consegue
+     fazer de verdade e reage ao resultado — evita ter o e-mail do admin duplicado em dois lugares (aqui e
+     nas Regras). Ver firestore_regras_sugeridas.txt (função isAdmin(), nova) para a mudança nas Regras —
+     publique a versão nova antes de usar os recursos desta rodada, ou eles não vão funcionar. -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --bg-main: #f4f5f7; --bg-card: #ffffff; --border-color: #e3e5e9;
+    --text-primary: #1a1d23; --text-secondary: #6b7280; --text-muted: #9aa1ac;
+    --accent-blue: #3b82f6; --accent-green: #16a34a; --accent-red: #ef4444; --accent-amber: #d97706;
+    --radius-md: 10px; --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg-main); color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex; justify-content: center; padding: 48px 16px;
+  }
+  .wrap { width: 100%; max-width: 640px; }
+  .brand { text-align: center; margin-bottom: 28px; }
+  .brand-title { font-weight: 900; font-size: 26px; letter-spacing: -0.5px; }
+  .brand-sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+    padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .card-title { font-size: 13.5px; font-weight: 700; margin-bottom: 14px; }
+  label { display:block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight:600; }
+  input[type="text"], input[type="password"] {
+    width: 100%; padding: 11px 12px; font-size: 14px; border: 1px solid var(--border-color);
+    border-radius: var(--radius-md); background: var(--bg-main); color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+  input:focus { outline: 2px solid var(--accent-blue); outline-offset: -1px; }
+  button {
+    padding: 11px; font-size: 13.5px; font-weight: 700; border: none; border-radius: var(--radius-md);
+    cursor: pointer; background: var(--accent-blue); color: #fff; transition: opacity .15s;
+  }
+  button.full { width: 100%; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  button:hover:not(:disabled) { opacity: .9; }
+  #status-conexao { text-align:center; font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; }
+  #status-conexao.erro { color: var(--accent-red); }
+  #status-conexao.ok { color: var(--accent-green); }
+  #msg-login { font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+  #msg-login.erro { color: var(--accent-red); }
+  .btn-sair { background: none; color: var(--text-secondary); text-decoration: underline; font-weight: 500; padding: 0; margin-top: 12px; }
+  /* V3.18 — 13/07/2026 (Rodada 1): botão Sair fixo no topo, ao lado do título, sempre visível quando logado. */
+  .btn-sair-topo {
+    position: absolute; top: 0; right: 0; background: var(--bg-card); color: var(--text-secondary);
+    border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; font-size: 12.5px;
+  }
+  .btn-sair-topo:hover { background: var(--bg-main); color: var(--text-primary); }
+  .hidden { display: none !important; }
+  .abas { display: flex; gap: 6px; margin-bottom: 16px; }
+  .aba {
+    flex: 1; text-align: center; padding: 9px; font-size: 12.5px; font-weight: 700; border-radius: var(--radius-md);
+    background: var(--bg-main); color: var(--text-secondary); cursor: pointer; border: 1px solid var(--border-color);
+  }
+  .aba.ativa { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+  .lista-vazia { font-size: 12.5px; color: var(--text-muted); text-align: center; padding: 16px 0; }
+  .item-usuario { padding: 14px 0; border-bottom: 1px solid var(--border-color); }
+  .item-usuario:last-child { border-bottom: none; }
+  .item-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .item-nome { font-weight: 700; font-size: 13.5px; }
+  .item-detalhe { font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.6; }
+  .item-detalhe strong { color: var(--text-primary); }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .3px; }
+  .badge.pendente { background: rgba(217,119,6,.12); color: var(--accent-amber); }
+  .badge.ativo { background: rgba(22,163,74,.12); color: var(--accent-green); }
+  .badge.desabilitado { background: rgba(239,68,68,.1); color: var(--accent-red); }
+  .badge.suspensoPorVencimento { background: rgba(217,119,6,.12); color: var(--accent-amber); } /* V3.30 */
+  .item-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn-sm { font-size: 11px; padding: 7px 12px; font-weight: 600; }
+  .btn-verde { background: rgba(22,163,74,.1); color: var(--accent-green); border: 1px solid rgba(22,163,74,.3); }
+  .btn-vermelho { background: rgba(239,68,68,.08); color: var(--accent-red); border: 1px solid rgba(239,68,68,.3); }
+  .btn-neutro { background: var(--bg-main); color: var(--text-secondary); border: 1px solid var(--border-color); }
+  .aprovar-form { display: none; margin-top: 10px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-md); }
+  .aprovar-form.aberto { display: block; }
+  .aprovar-form input { margin-bottom: 8px; }
+  .historico { display: none; margin-top: 10px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; }
+  .historico.aberto { display: block; }
+  .historico-item { font-size: 11px; color: var(--text-secondary); padding: 4px 0; border-bottom: 1px dashed var(--border-color); }
+  .historico-item:last-child { border-bottom: none; }
+  /* V2.75 — Bloco 5 */
+  .item-uso { font-size: 10.5px; color: var(--text-muted); margin-top: 4px; }
+  .permissoes-menu { display: none; margin-top: 10px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-md); }
+  .permissoes-menu.aberto { display: block; }
+  .permissoes-menu-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .permissoes-menu-lista label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--text-primary); cursor: pointer; }
+  .permissoes-menu-hint { font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; }
+  /* V2.101 — 14/07/2026: formulários de dupla confirmação para Resetar Banco de Dados / Excluir Usuário
+     (mesmo padrão visual de .aprovar-form, com borda vermelha pra deixar claro que é uma zona de risco). */
+  .risco-form { display: none; margin-top: 10px; padding: 12px; background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.3); border-radius: var(--radius-md); }
+  .risco-form.aberto { display: block; }
+  .risco-form input { margin-bottom: 8px; }
+  .risco-form-aviso { font-size: 11.5px; color: var(--text-primary); margin-bottom: 10px; line-height: 1.5; }
+  .log-geral-item { font-size: 11px; color: var(--text-secondary); padding: 8px 0; border-bottom: 1px dashed var(--border-color); }
+  .log-geral-item:last-child { border-bottom: none; }
+  .log-geral-item strong { color: var(--text-primary); }
+  .rodape { text-align:center; font-size: 11px; color: var(--text-muted); margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- V3.18 — 13/07/2026 (Rodada 1): botão "Sair" trazido pro topo, sempre visível enquanto logado (antes
+       ficava escondido como linkzinho no fim do primeiro cartão, sem destaque — cliente relatou não achar
+       onde deslogar). -->
+  <div class="brand" style="position:relative;">
+    <div class="brand-title">Aranuz</div>
+    <div class="brand-sub">Painel de Administração — Usuários</div>
+    <button class="btn-sair-topo hidden" id="btn-sair-topo" onclick="sairClique()">Sair</button>
+  </div>
+
+  <div id="status-conexao">Conectando ao Firebase...</div>
+
+  <div class="card" id="card-login">
+    <div class="card-title">Login do administrador</div>
+    <label for="input-login-email">E-mail</label>
+    <input type="text" id="input-login-email" placeholder="seu@email.com">
+    <label for="input-login-senha">Senha</label>
+    <input type="password" id="input-login-senha" placeholder="••••••••">
+    <button class="full" id="btn-login" onclick="loginClique()" disabled>Entrar</button>
+    <div id="msg-login"></div>
+  </div>
+
+  <div id="area-logada" class="hidden">
+    <!-- V2.92 — 11/07/2026: removido o card "Configuração — Custom Claims (V241)" (URL/segredo do script
+         separado "Aranuz Admin Claims"). Esse script nunca chegou a ser configurado de verdade em produção
+         — foi a causa raiz de vários problemas de permissão encontrados numa rodada de investigação
+         (fornecedor cadastrado no app não sincronizando, cadastro de conta não gravando, entre outros). As
+         Regras de Segurança do Firestore agora conferem empresaId/status direto no documento
+         usuarios/{uid} (sem precisar de nenhum claim colado por script externo) — mesmo nível de proteção,
+         um sistema a menos pra dar problema. Ver Regras de Segurança novas, entregues junto. -->
+
+    <div class="card">
+      <div class="abas">
+        <div class="aba ativa" id="aba-pendente" onclick="mudarAba('pendente')">Pendentes</div>
+        <div class="aba" id="aba-ativo" onclick="mudarAba('ativo')">Ativos</div>
+        <!-- V3.30 — Rodada 2B: aba própria pra quem teve o acesso cortado por licença vencida, separada
+             de "Desabilitados" (esse é sempre uma ação manual do admin) -->
+        <div class="aba" id="aba-suspensoPorVencimento" onclick="mudarAba('suspensoPorVencimento')">Vencidas</div>
+        <div class="aba" id="aba-desabilitado" onclick="mudarAba('desabilitado')">Desabilitados</div>
+      </div>
+      <!-- V2.100 — 13/07/2026: busca/filtro (sugestão nº 4) — filtra a lista já carregada, na hora, por
+           nome da empresa, e-mail ou empresaId. Não faz nenhuma consulta nova ao Firestore. -->
+      <input type="text" id="input-busca-usuarios" placeholder="Buscar por nome, e-mail ou empresaId..." oninput="filtrarListaClique()">
+      <div id="lista-usuarios"><div class="lista-vazia">Carregando...</div></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <button class="btn-neutro btn-sm" onclick="carregarLista()">↻ Recarregar lista</button>
+        <button class="btn-neutro btn-sm" onclick="exportarCsvClique()">⬇ Exportar CSV</button>
+      </div>
+    </div>
+
+    <!-- V3.19 — 13/07/2026 (Rodada 2A, Sistema de Licenças): tolerância global (grace period) aplicada
+         ao aprovar/renovar — quantos dias o usuário continua acessando DEPOIS do vencimento antes do
+         corte de verdade. Fica num card próprio (não misturado no de Uso do Firestore) porque afeta
+         diretamente as Regras de Segurança. -->
+    <div class="card">
+      <div class="card-title">🔑 Sistema de Licenças</div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; margin-bottom:0;">
+        Dias de tolerância (grace period) após o vencimento, antes do corte automático:
+        <input type="number" id="input-grace-dias" min="0" style="width:80px;" onchange="salvarConfigLicenca_()">
+      </label>
+      <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px; line-height:1.5;">Vale só pra novas aprovações/renovações a partir de agora — não recalcula licenças já concedidas. Presets de dias (7/30/90/1 ano/sem prazo) aparecem no formulário de Aprovar e no de Renovar Licença, dentro de cada usuário.</div>
+      <div id="msg-grace-dias" style="font-size:11px; margin-top:6px; min-height:14px;"></div>
+      <!-- V3.30 — 13/07/2026 (Rodada 2B): aviso de licenças vencendo em breve (sugestão nº 2) + seleção
+           em lote pra renovar várias de uma vez (sugestão nº 4). Não dispara e-mail de verdade — mesmo
+           motivo já registrado no alerta de limite de uso (V3.17): este painel não tem backend próprio
+           pra enviar e-mails sem depender de uma conta externa nova. -->
+      <hr style="border:none; border-top:1px solid var(--border-color); margin:14px 0;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; margin-bottom:8px;">
+        Avisar aqui quando faltar
+        <input type="number" id="input-aviso-dias" min="0" value="5" style="width:60px;">
+        dia(s) ou menos pro vencimento
+        <button class="btn-neutro btn-sm" onclick="carregarVencimentosProximos_()">↻ Verificar agora</button>
+      </label>
+      <div id="vencimentos-proximos-lista"><div class="lista-vazia">Clique em "Verificar agora" pra ver quem está perto de vencer (ou já vencido).</div></div>
+      <div id="vencimentos-lote-barra" class="hidden" style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <label style="margin:0; font-size:11px; font-weight:600;"><input type="checkbox" id="chk-selecionar-todos-venc" onchange="toggleSelecionarTodosVencimentos_()"> Selecionar todos</label>
+        <span style="font-size:11px; color:var(--text-secondary);">Renovar selecionados por:</span>
+        <select id="select-dias-lote">
+          <option value="7">7 dias (teste)</option>
+          <option value="30" selected>30 dias</option>
+          <option value="90">90 dias</option>
+          <option value="365">1 ano</option>
+          <option value="0">Sem prazo</option>
+        </select>
+        <button class="btn-sm btn-verde" onclick="renovarSelecionadosClique_()">Renovar selecionados</button>
+        <div id="msg-renovar-lote" style="font-size:11px; width:100%; min-height:14px;"></div>
+      </div>
+    </div>
+
+    <!-- V2.100 — 13/07/2026: resumo agregado de uso do Firestore por empresa (sugestão nº 9) — soma o
+         usoLeituras/usoEscritas de todos os usuários ATIVOS de cada empresaId, pra dar uma visão por
+         empresa (não só por usuário individual, como o card de cima já mostra). -->
+    <div class="card">
+      <div class="card-title">📊 Uso do Firestore por Empresa</div>
+      <!-- V3.17 — item 15 da lista de robustez: alerta de limite de uso, configurável e desativável,
+           desativado por padrão. Sem enviar e-mail automático (não há backend próprio deste painel pra
+           disparar e-mails de verdade sem depender de uma conta externa nova) — em vez disso, destaca
+           visualmente aqui mesmo qualquer empresa que passar do limite, toda vez que "Calcular" rodar. -->
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; margin-bottom:8px;">
+        <input type="checkbox" id="chk-alerta-limite-uso" onchange="salvarConfigLimiteUso_()"> Destacar empresas acima de
+        <input type="number" id="input-limite-uso" min="0" style="width:110px;" placeholder="ex: 40000" onchange="salvarConfigLimiteUso_()">
+        leituras+gravações no mês
+      </label>
+      <div id="uso-por-empresa-lista"><div class="lista-vazia">Clique em "Calcular" pra ver o resumo.</div></div>
+      <button class="btn-neutro btn-sm" onclick="carregarUsoPorEmpresa()" style="margin-top:12px;">↻ Calcular</button>
+    </div>
+
+    <!-- V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): crescimento (cadastros por semana, sugestão nº 21)
+         + empresas inativas há muito tempo (sugestão nº 22). -->
+    <div class="card">
+      <div class="card-title">📈 Crescimento e Atividade</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Novos cadastros nas últimas 8 semanas:</div>
+      <div id="grafico-crescimento"><div class="lista-vazia">Clique em "Calcular" pra ver o gráfico.</div></div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; margin-top:16px;">
+        Considerar inativa se ninguém logar há mais de
+        <input type="number" id="input-dias-inatividade" min="1" value="30" style="width:70px;">
+        dia(s)
+      </label>
+      <div id="empresas-inativas-lista" style="margin-top:8px;"></div>
+      <button class="btn-neutro btn-sm" onclick="carregarCrescimentoEAtividade_()" style="margin-top:12px;">↻ Calcular</button>
+    </div>
+
+    <!-- V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): status geral do sistema num só lugar (sugestão nº
+         23) + erros recentes com destaque pra possíveis problemas de sincronização/planilha (sugestões nº
+         24 e 26 — ver comentário na função sobre por que isso é feito por PROXY de erro reportado, e não
+         por um "ping" ativo em cada planilha de cada empresa). -->
+    <div class="card">
+      <div class="card-title">🩺 Saúde do Sistema</div>
+      <div id="saude-sistema-resumo"><div class="lista-vazia">Clique em "Verificar" pra ver o status.</div></div>
+      <button class="btn-neutro btn-sm" onclick="verificarSaudeSistema_()" style="margin-top:12px;">↻ Verificar</button>
+    </div>
+
+    <!-- V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): ranking de empresas por volume de dados (sugestão
+         nº 25). Sob demanda (nunca automático) porque conta documentos em várias coleções de TODAS as
+         empresas — usa contagem agregada (.count(), sem baixar os documentos) mas ainda assim é mais
+         pesado que os outros cards desta tela. -->
+    <div class="card">
+      <div class="card-title">🏆 Ranking por Volume de Dados</div>
+      <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:10px; line-height:1.5;">Conta Leads, Clientes, Projetos, Orçamentos, Financeiro e Contratos de cada empresa (contagem agregada, não baixa os documentos) — pode levar alguns segundos com muitas empresas.</div>
+      <div id="ranking-volume-lista"><div class="lista-vazia">Clique em "Calcular" pra ver o ranking.</div></div>
+      <button class="btn-neutro btn-sm" onclick="carregarRankingVolumeDados_()" style="margin-top:12px;">↻ Calcular</button>
+    </div>
+
+    <!-- V2.100 — 13/07/2026: gerenciamento de administradores adicionais (sugestão nº 2) — além do
+         administrador "de fábrica" (aranuzworkspace@gmail.com, sempre válido, ver isAdmin() nas Regras de
+         Segurança), esta lista permite dar poder de administrador a outros e-mails sem precisar editar as
+         Regras e republicá-las toda vez. Guardada em config/admins (campo "emails"). -->
+    <div class="card">
+      <div class="card-title">🔑 Administradores adicionais</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:12px; line-height:1.6;">O e-mail <strong>aranuzworkspace@gmail.com</strong> é sempre administrador (fixo, garantido). Os e-mails abaixo ganham o mesmo poder, adicionalmente.</div>
+      <div id="lista-admins"><div class="lista-vazia">Clique em "Carregar" pra ver a lista.</div></div>
+      <div style="margin-top:12px;">
+        <label>Adicionar novo administrador</label>
+        <input type="text" id="input-novo-admin" placeholder="email@exemplo.com">
+        <button class="btn-sm btn-verde" onclick="adicionarAdminClique()">Adicionar</button>
+      </div>
+      <button class="btn-neutro btn-sm" onclick="carregarAdmins()" style="margin-top:12px;">↻ Carregar</button>
+    </div>
+
+    <!-- V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): Central de Auditoria — substitui os 2 cards que
+         existiam separados ("Tentativas de Acesso Negadas" e "Log de Acesso Geral") por UM feed
+         cronológico só, misturando eventos de usuário (login/cadastro/aprovação/licença/etc.), resets de
+         banco, exclusões de usuário e tentativas de acesso negadas ao Admin (sugestão nº 27) — com filtro
+         por empresa (nº 28), busca textual (nº 30) e exportação em CSV (nº 29). -->
+    <div class="card">
+      <div class="card-title">🕵️ Central de Auditoria</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" id="auditoria-filtro-empresa" placeholder="Filtrar por empresaId..." style="flex:1; min-width:160px;" oninput="renderizarAuditoria_()">
+        <input type="text" id="auditoria-busca" placeholder="Buscar texto (e-mail, admin, detalhe)..." style="flex:1; min-width:160px;" oninput="renderizarAuditoria_()">
+      </div>
+      <div id="auditoria-lista"><div class="lista-vazia">Clique em "Carregar" pra ver os eventos mais recentes.</div></div>
+      <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+        <button class="btn-neutro btn-sm" onclick="carregarAuditoria_()">↻ Carregar</button>
+        <button class="btn-neutro btn-sm" onclick="exportarAuditoriaCsv_()">⬇ Exportar CSV (respeitando filtros)</button>
+      </div>
+    </div>
+
+    <!-- V3.32 — Rodada 3B: retenção configurável dos logs (sugestão nº 31). SEM tarefa automática rodando
+         sozinha todo dia (não há backend/cron próprio deste painel) — o botão "Aplicar agora" apaga
+         manualmente o que passou do prazo, nas 4 coleções de log (resets, exclusões, tentativas negadas e
+         eventos de usuário). Pense nisso como "limpar agora", não "vai limpar sozinho no futuro". -->
+    <div class="card">
+      <div class="card-title">🗑️ Retenção de Logs</div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; margin-bottom:8px;">
+        Apagar registros de log com mais de
+        <input type="number" id="input-retencao-dias" min="1" value="365" style="width:80px;">
+        dia(s)
+      </label>
+      <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:10px; line-height:1.5;">Afeta só os logs de auditoria acima (resets, exclusões, tentativas negadas, eventos de usuário) e o Log de Erros do App — nunca os dados de negócio das empresas. Não roda sozinho: precisa clicar em "Aplicar agora" toda vez que quiser limpar.</div>
+      <button class="btn-vermelho btn-sm" onclick="aplicarRetencaoLogsClique_()">Aplicar agora</button>
+      <div id="msg-retencao-logs" style="font-size:11px; margin-top:8px; min-height:14px;"></div>
+    </div>
+
+    <!-- V3.17 — item 35 da lista de robustez de dados: substituto do Sentry (sem precisar de conta
+         externa nova) — o app principal grava aqui (coleção logsErrosApp, nível raiz) qualquer erro de
+         JavaScript real que acontecer pra algum usuário, deduplicado por sessão (ver
+         _registrarErroApp_()/window.onerror no Aranuz_V3.xx.html). Revisável aqui, de todos os clientes
+         de uma vez. -->
+    <div class="card">
+      <div class="card-title">🐞 Log de Erros do App (todos os clientes)</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">Erros de JavaScript reais capturados automaticamente no app principal — cada erro só é gravado uma vez por sessão do usuário, pra não inundar esta lista.</div>
+      <div id="log-erros-app-lista"><div class="lista-vazia">Clique em "Carregar" pra ver os erros mais recentes.</div></div>
+      <button class="btn-neutro btn-sm" onclick="carregarLogErrosApp()" style="margin-top:12px;">↻ Carregar</button>
+    </div>
+  </div>
+
+  <div class="rodape">Aranuz · Este painel aprova/gerencia o acesso dos usuários ao app.<br>Não compartilhe seu login — quem o tiver pode aprovar ou desativar qualquer conta.</div>
+</div>
+
+<script>
+  /* ====== Mesma configuração/coleção usadas no app principal (M-Hub_V240.html) ======
+     Coleção Firestore: usuarios/{uid} -> {email, nomeEmpresa, empresaId, status, criadoEm, ultimoLogin}.
+     Subcoleção: usuarios/{uid}/eventos/{autoId} -> {tipo, detalhe, em} — histórico de entradas/cadastro.
+     LOGIN: e-mail/senha do administrador (não confundir com as contas dos usuários finais) — as Regras
+     de Segurança liberam listar/aprovar/desabilitar só pra esse e-mail específico. */
+  const firebaseConfig = {
+  apiKey: "AIzaSyAE_c8ZOI07E-TFz3bU0UElUWoTw58j8d8",
+  authDomain: "aranuz-6c80c.firebaseapp.com",
+  projectId: "aranuz-6c80c",
+  storageBucket: "aranuz-6c80c.firebasestorage.app",
+  messagingSenderId: "588870814965",
+  appId: "1:588870814965:web:38c4b98ca62f335d6709bc",
+  measurementId: "G-5XPYTDNZ43"
+  };
+
+  let db = null, auth = null, pronto = false, abaAtual = 'pendente';
+
+  function setStatus(texto, tipo) { const el = document.getElementById('status-conexao'); el.textContent = texto; el.className = tipo || ''; }
+  function setMsgLogin(texto, tipo) { const el = document.getElementById('msg-login'); el.textContent = texto; el.className = tipo || ''; }
+
+  // V2.100 — 13/07/2026: substitui a checagem V2.98 (que comparava o e-mail logado contra UMA constante fixa
+  // no código, EMAIL_ADMIN). Agora que existe uma lista de administradores gerenciável (config/admins, ver
+  // Regras de Segurança), manter uma cópia separada do e-mail aqui no HTML viraria uma segunda fonte de
+  // verdade, fácil de ficar desatualizada. Em vez disso, esta função tenta a MESMA operação que só um
+  // administrador consegue fazer de verdade (uma consulta a "usuarios") e reage ao resultado: se a Regra de
+  // Segurança permitir, a pessoa é administradora (o Firestore é quem decide, não uma lista duplicada
+  // aqui); se negar, mostra "Acesso negado", desloga e registra a tentativa (ver registrarTentativaNegada()).
+  async function verificarEAbrirPainel(user) {
+    try {
+      await db.collection('usuarios').limit(1).get();
+      mostrarAreaLogada();
+    } catch (e) {
+      await registrarTentativaNegada(user && user.email);
+      setMsgLogin('Este e-mail não tem acesso ao Painel de Administração. Sua conta continua funcionando normalmente no app principal.', 'erro');
+      auth.signOut();
+    }
+  }
+
+  // V2.100 — 13/07/2026: grava uma tentativa negada em logsTentativasAdmin (sugestão nº 10) — a própria
+  // pessoa rejeitada grava o registro da sua tentativa (a Regra de Segurança permite CREATE pra qualquer
+  // autenticado, mas só administradores conseguem LER a lista depois, no card "Tentativas de Acesso
+  // Negadas"). Se até essa gravação falhar por algum motivo, ignora silenciosamente — não é crítico.
+  async function registrarTentativaNegada(email) {
+    try {
+      await db.collection('logsTentativasAdmin').add({ email: email || '(desconhecido)', em: new Date().toISOString() });
+    } catch (e2) { /* não crítico */ }
+  }
+
+  // 11/07/2026 — BUGFIX (relatado: "logo e pouco depois tudo vira 'Missing or insufficient permissions',
+  // preciso sair e logar de novo"): esta página usava firebase.initializeApp()/firebase.auth() "padrão" —
+  // no Firebase, isso guarda a sessão logada em localStorage, que é COMPARTILHADO por todas as páginas do
+  // MESMO domínio (Home, o app principal e este Painel, se hospedados no mesmo site). Resultado: se você
+  // loga aqui no Painel e, em OUTRA aba do mesmo navegador, alguém loga (ou é deslogado) no app principal
+  // ou na Home, essa troca silenciosamente substitui a sessão do Painel também — o painel continua
+  // parecendo "logado" na tela, mas as próximas leituras do Firestore passam a usar a identidade da OUTRA
+  // aba, e como ela não é 'aranuzworkspace@gmail.com' (o e-mail configurado como administrador nas Regras
+  // de Segurança do Firestore — trocado de 'mhub@gmail.com' em 12/07/2026, a pedido do cliente), a Regra
+  // nega ("Missing or insufficient
+  // permissions"). Sair e logar de novo "ganha" de volta a sessão correta só até a próxima troca em outra
+  // aba — daí a janela curta de 1-2 minutos. Correção: dar ao Painel sua PRÓPRIA instância nomeada do
+  // Firebase ("mhubAdminApp") com sessão restrita a esta aba (SESSION, não LOCAL) — assim, nada que
+  // aconteça em outras abas/páginas consegue mais afetar (nem ser afetado por) o login do Painel.
+  function iniciar() {
+    try {
+      if (typeof firebase === 'undefined') { setStatus('Falha: o SDK do Firebase não carregou (verifique sua internet).', 'erro'); return; }
+      const adminApp = firebase.initializeApp(firebaseConfig, 'mhubAdminApp');
+      auth = adminApp.auth();
+      db = adminApp.firestore();
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
+        pronto = true;
+        setStatus('Conectado. Faça login para continuar.', 'ok');
+        document.getElementById('btn-login').disabled = false;
+        auth.onAuthStateChanged(user => { if (user) verificarEAbrirPainel(user); });
+      });
+    } catch (e) { setStatus('Falha ao iniciar: ' + (e && e.message || e), 'erro'); }
+  }
+
+  async function loginClique() {
+    const email = document.getElementById('input-login-email').value.trim();
+    const senha = document.getElementById('input-login-senha').value;
+    const btn = document.getElementById('btn-login');
+    if (!email || !senha) { setMsgLogin('Preencha e-mail e senha.', 'erro'); return; }
+    btn.disabled = true;
+    setMsgLogin('Entrando...', '');
+    try {
+      const cred = await auth.signInWithEmailAndPassword(email, senha);
+      await verificarEAbrirPainel(cred.user);
+    } catch (e) { setMsgLogin('Falha no login: ' + (e && e.message || e), 'erro'); }
+    btn.disabled = false;
+  }
+
+  function mostrarAreaLogada() {
+    document.getElementById('card-login').classList.add('hidden');
+    document.getElementById('area-logada').classList.remove('hidden');
+    document.getElementById('btn-sair-topo').classList.remove('hidden'); // V3.18
+    carregarLista();
+    carregarConfigLimiteUso_(); // V3.17
+    carregarConfigLicenca_(); // V3.19
+  }
+  // V3.17 — item 15 da lista de robustez: carrega a configuração salva do alerta de limite de uso
+  // (desativado por padrão — ver checkbox desmarcado se o documento ainda não existir).
+  async function carregarConfigLimiteUso_() {
+    try {
+      const doc = await db.collection('config').doc('limiteUsoFirestore').get();
+      const dados = doc.exists ? doc.data() : {};
+      const chk = document.getElementById('chk-alerta-limite-uso');
+      const input = document.getElementById('input-limite-uso');
+      if (chk) chk.checked = !!dados.ativo;
+      if (input) input.value = dados.limite || '';
+    } catch (e) { console.warn('Falha ao carregar config de limite de uso:', e); }
+  }
+  async function salvarConfigLimiteUso_() {
+    const ativo = document.getElementById('chk-alerta-limite-uso').checked;
+    const limite = Number(document.getElementById('input-limite-uso').value) || 0;
+    try {
+      await db.collection('config').doc('limiteUsoFirestore').set({ ativo: ativo, limite: limite }, { merge: true });
+    } catch (e) { alert('Erro ao salvar configuração: ' + (e && e.message || e)); }
+  }
+
+  function sairClique() { auth.signOut().then(() => location.reload()); }
+
+  // V2.92 — 11/07/2026: removidas carregarConfigClaims()/salvarConfigClaims()/definirClaimEmpresa() (o
+  // script separado "Aranuz Admin Claims" nunca chegou a ser configurado de verdade em produção — ver
+  // comentário no card removido, no topo deste arquivo). A aprovação de usuário (confirmarAprovarClique(),
+  // abaixo) agora só grava status/empresaId no Firestore — é só isso que as Regras de Segurança conferem.
+
+  function mudarAba(aba) {
+    abaAtual = aba;
+    ['pendente','ativo','suspensoPorVencimento','desabilitado'].forEach(a => document.getElementById('aba-'+a).classList.toggle('ativa', a === aba));
+    carregarLista();
+  }
+
+  function slugify(texto) {
+    return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'empresa';
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtData(iso) { if (!iso) return '—'; try { return new Date(iso).toLocaleString('pt-BR'); } catch(e) { return iso; } }
+  // V3.19 — 13/07/2026 (Rodada 2A, Sistema de Licenças): fmtData() acima só entende string ISO — os
+  // campos novos de licença são Timestamp do Firestore (pra dar pra comparar direto com request.time nas
+  // Regras de Segurança, sem conversão). fmtDataFB() entende os dois formatos.
+  function fmtDataFB(ts) {
+    if (!ts) return '—';
+    try { const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('pt-BR'); } catch(e) { return '—'; }
+  }
+  // V3.30 — 13/07/2026 (Rodada 2B): rótulo amigável do badge (o valor bruto "suspensoPorVencimento" não
+  // é legível na tela).
+  const STATUS_LABEL = { pendente: 'pendente', ativo: 'ativo', desabilitado: 'desabilitado', suspensoPorVencimento: 'vencida' };
+  // V3.30 — item 3 pedido pelo cliente: licença padrão de todo usuário NOVO (na aprovação) é de 30 dias
+  // — usado como valor pré-selecionado no formulário de Aprovar (renovação não usa este padrão, começa
+  // pré-selecionada com os dias que o usuário já tinha).
+  const LICENCA_DIAS_PADRAO_NOVO_USUARIO = 30;
+  const LICENCA_PRESETS = [
+    { label: '7 dias (teste)', dias: 7 },
+    { label: '30 dias', dias: 30 },
+    { label: '90 dias', dias: 90 },
+    { label: '1 ano', dias: 365 },
+    { label: 'Sem prazo', dias: 0 }
+  ];
+  let CONFIG_GRACE_DIAS_PADRAO = 3; // valor de fallback até carregarConfigLicenca_() rodar
+  // Monta os 3 campos de licença gravados no usuário a partir de hoje + N dias + tolerância (grace
+  // period) configurável. licencaCorteEm é o campo que as Regras de Segurança realmente checam.
+  function _calcularCamposLicenca_(dias) {
+    const agora = new Date();
+    const graceDias = CONFIG_GRACE_DIAS_PADRAO;
+    const vencimento = new Date(agora); if (Number(dias) > 0) vencimento.setDate(vencimento.getDate() + Number(dias));
+    const corte = new Date(vencimento); if (Number(dias) > 0) corte.setDate(corte.getDate() + Number(graceDias));
+    return {
+      licencaDias: Number(dias) || 0,
+      licencaGraceDias: graceDias,
+      licencaInicio: firebase.firestore.Timestamp.fromDate(agora),
+      licencaVencimento: firebase.firestore.Timestamp.fromDate(vencimento),
+      licencaCorteEm: firebase.firestore.Timestamp.fromDate(corte)
+    };
+  }
+  // Estado de licença de um usuário pra exibição (não mexe no status real do Firestore — só decide o
+  // que mostrar na tela; a checagem que REALMENTE bloqueia o acesso está nas Regras de Segurança).
+  function _situacaoLicenca_(u) {
+    if (!u.licencaCorteEm || Number(u.licencaDias) === 0) return { texto: 'Sem prazo', cor: 'var(--text-secondary)' };
+    const corte = u.licencaCorteEm.toDate ? u.licencaCorteEm.toDate() : new Date(u.licencaCorteEm);
+    const venc = u.licencaVencimento && u.licencaVencimento.toDate ? u.licencaVencimento.toDate() : corte;
+    const diffDias = Math.ceil((venc.getTime() - Date.now()) / 86400000);
+    if (corte.getTime() < Date.now()) return { texto: 'Vencida em ' + fmtDataFB(u.licencaVencimento) + ' — acesso já cortado', cor: 'var(--accent-red)' };
+    if (diffDias <= 3) return { texto: 'Vence em ' + fmtDataFB(u.licencaVencimento) + ' (faltam ' + diffDias + ' dia(s))', cor: 'var(--accent-amber)' };
+    return { texto: 'Válida até ' + fmtDataFB(u.licencaVencimento), cor: 'var(--accent-green)' };
+  }
+  async function carregarConfigLicenca_() {
+    try {
+      const doc = await db.collection('config').doc('licencas').get();
+      CONFIG_GRACE_DIAS_PADRAO = (doc.exists && Number(doc.data().graceDiasPadrao) >= 0) ? Number(doc.data().graceDiasPadrao) : 3;
+      const input = document.getElementById('input-grace-dias'); if (input) input.value = CONFIG_GRACE_DIAS_PADRAO;
+    } catch (e) { console.warn('Falha ao carregar config de licença:', e); }
+  }
+  async function salvarConfigLicenca_() {
+    const val = Math.max(0, Number(document.getElementById('input-grace-dias').value) || 0);
+    try {
+      await db.collection('config').doc('licencas').set({ graceDiasPadrao: val }, { merge: true });
+      CONFIG_GRACE_DIAS_PADRAO = val;
+      const msg = document.getElementById('msg-grace-dias'); if (msg) { msg.textContent = 'Salvo.'; msg.style.color = 'var(--accent-green)'; setTimeout(()=>{ if(msg) msg.textContent=''; }, 2000); }
+    } catch (e) { alert('Erro ao salvar: ' + (e && e.message || e)); }
+  }
+
+  // V3.30 — 13/07/2026 (Rodada 2B): varre usuários "ativo" e "suspensoPorVencimento" e lista quem está
+  // a N dias ou menos do vencimento (ou já vencido) — sugestão nº 2 (aviso pro admin) + sugestão nº 4
+  // (base pra renovação em lote, logo abaixo).
+  let _vencimentosEncontrados_ = [];
+  async function carregarVencimentosProximos_() {
+    const lista = document.getElementById('vencimentos-proximos-lista');
+    const barra = document.getElementById('vencimentos-lote-barra');
+    lista.innerHTML = '<div class="lista-vazia">Verificando...</div>';
+    const limiteDias = Number(document.getElementById('input-aviso-dias').value) || 5;
+    try {
+      const [snapAtivos, snapVencidas] = await Promise.all([
+        db.collection('usuarios').where('status', '==', 'ativo').get(),
+        db.collection('usuarios').where('status', '==', 'suspensoPorVencimento').get()
+      ]);
+      const todos = [];
+      snapAtivos.forEach(doc => todos.push(Object.assign({ uid: doc.id }, doc.data())));
+      snapVencidas.forEach(doc => todos.push(Object.assign({ uid: doc.id }, doc.data())));
+      _vencimentosEncontrados_ = todos.filter(u => {
+        if (!u.licencaVencimento || Number(u.licencaDias) === 0) return false;
+        const venc = u.licencaVencimento.toDate ? u.licencaVencimento.toDate() : new Date(u.licencaVencimento);
+        const dias = Math.ceil((venc.getTime() - Date.now()) / 86400000);
+        return dias <= limiteDias;
+      }).sort((a, b) => a.licencaVencimento.toMillis() - b.licencaVencimento.toMillis());
+      if (!_vencimentosEncontrados_.length) {
+        lista.innerHTML = '<div class="lista-vazia">Nenhuma licença vencendo nos próximos ' + limiteDias + ' dia(s), nem já vencida.</div>';
+        barra.classList.add('hidden');
+        return;
+      }
+      lista.innerHTML = _vencimentosEncontrados_.map(u => {
+        const sit = _situacaoLicenca_(u);
+        return `<label style="display:flex; align-items:center; gap:8px; font-size:11.5px; padding:6px 0; border-bottom:1px dashed var(--border-color); cursor:pointer;">
+          <input type="checkbox" class="chk-venc-item" value="${u.uid}">
+          <span style="flex:1;">${esc(u.nomeEmpresa || u.email)} — <span style="color:${sit.cor}; font-weight:600;">${sit.texto}</span></span>
+        </label>`;
+      }).join('');
+      barra.classList.remove('hidden');
+      document.getElementById('chk-selecionar-todos-venc').checked = false;
+    } catch (e) {
+      lista.innerHTML = '<div class="lista-vazia">Erro ao verificar: ' + (e && e.message || e) + '</div>';
+    }
+  }
+  function toggleSelecionarTodosVencimentos_() {
+    const marcar = document.getElementById('chk-selecionar-todos-venc').checked;
+    document.querySelectorAll('.chk-venc-item').forEach(chk => { chk.checked = marcar; });
+  }
+  async function renovarSelecionadosClique_() {
+    const uids = Array.from(document.querySelectorAll('.chk-venc-item:checked')).map(chk => chk.value);
+    const msg = document.getElementById('msg-renovar-lote');
+    if (!uids.length) { msg.textContent = 'Selecione ao menos um usuário.'; msg.style.color = 'var(--accent-red)'; return; }
+    const dias = Number(document.getElementById('select-dias-lote').value);
+    if (!confirm('Renovar a licença de ' + uids.length + ' usuário(s) por ' + (dias || 'sem prazo') + (dias ? ' dia(s)' : '') + '?')) return;
+    msg.textContent = 'Renovando...'; msg.style.color = 'var(--text-secondary);';
+    let ok = 0, falhas = 0;
+    for (const uid of uids) {
+      try { await renovarLicencaUsuario(uid, dias); ok++; } catch (e) { falhas++; }
+    }
+    msg.textContent = ok + ' renovada(s)' + (falhas ? ', ' + falhas + ' falharam' : '') + '.';
+    msg.style.color = falhas ? 'var(--accent-amber)' : 'var(--accent-green)';
+    await carregarVencimentosProximos_();
+    await carregarLista();
+  }
+
+  async function listarUsuarios(status) {
+    const snap = await db.collection('usuarios').where('status', '==', status).get();
+    const lista = [];
+    snap.forEach(doc => lista.push(Object.assign({ uid: doc.id }, doc.data())));
+    lista.sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+    return lista;
+  }
+
+  // V2.100 — 13/07/2026: emailAdminAtual() — usada em todo evento gravado a partir de agora (sugestão nº
+  // 8: registrar QUEM tomou cada ação, não só o quê aconteceu). Antes só existia um administrador possível
+  // (então "quem" era sempre óbvio); agora que existe a lista de administradores adicionais (config/admins),
+  // isso passa a ser uma informação útil de verdade.
+  function emailAdminAtual() { return (auth && auth.currentUser && auth.currentUser.email) || '(desconhecido)'; }
+
+  // V3.19 — 13/07/2026 (Rodada 2A): aprovação agora também define a licença (dias de acesso). "dias"
+  // vem do formulário (presets ou valor customizado); 0 = sem prazo.
+  async function aprovarUsuario(uid, empresaId, dias) {
+    const campos = Object.assign({ status: 'ativo', empresaId: empresaId }, _calcularCamposLicenca_(dias));
+    await db.collection('usuarios').doc(uid).update(campos);
+    await db.collection('usuarios').doc(uid).collection('eventos').add({ tipo: 'aprovado', detalhe: 'empresaId: ' + empresaId + ' · licença: ' + (Number(dias) || 0) + ' dia(s)', admin: emailAdminAtual(), em: new Date().toISOString() });
+  }
+  // V3.19 — 13/07/2026 (Rodada 2A): renova a licença de um usuário já ativo (ou reativa quem estava com
+  // a licença vencida) — reinicia a contagem a partir de AGORA com o novo número de dias escolhido.
+  // V3.30 — Rodada 2B: também limpa renovacaoSolicitadaEm (se existir) e garante status "ativo" (cobre
+  // renovar alguém que estava suspensoPorVencimento).
+  async function renovarLicencaUsuario(uid, dias) {
+    const campos = Object.assign({ status: 'ativo', renovacaoSolicitadaEm: firebase.firestore.FieldValue.delete() }, _calcularCamposLicenca_(dias));
+    await db.collection('usuarios').doc(uid).update(campos);
+    await db.collection('usuarios').doc(uid).collection('eventos').add({ tipo: 'licencaRenovada', detalhe: (Number(dias) || 0) + ' dia(s) a partir de agora', admin: emailAdminAtual(), em: new Date().toISOString() });
+  }
+  async function desabilitarUsuario(uid) {
+    await db.collection('usuarios').doc(uid).update({ status: 'desabilitado' });
+    await db.collection('usuarios').doc(uid).collection('eventos').add({ tipo: 'desabilitado', detalhe: '', admin: emailAdminAtual(), em: new Date().toISOString() });
+  }
+  async function reabilitarUsuario(uid) {
+    await db.collection('usuarios').doc(uid).update({ status: 'ativo' });
+    await db.collection('usuarios').doc(uid).collection('eventos').add({ tipo: 'habilitado', detalhe: '', admin: emailAdminAtual(), em: new Date().toISOString() });
+  }
+  // V2.100 — 13/07/2026: trocarEmpresaUsuario() — sugestão nº 1. Até agora só dava pra definir o empresaId
+  // de um usuário no momento da APROVAÇÃO (aprovarUsuario(), acima); não existia jeito de corrigir depois
+  // sem editar direto no Firebase Console. As Regras de Segurança já permitiam (isAdmin() pode atualizar
+  // qualquer campo), só faltava o botão.
+  async function trocarEmpresaUsuario(uid, novoEmpresaId) {
+    await db.collection('usuarios').doc(uid).update({ empresaId: novoEmpresaId });
+    await db.collection('usuarios').doc(uid).collection('eventos').add({ tipo: 'empresaAlterada', detalhe: 'novo empresaId: ' + novoEmpresaId, admin: emailAdminAtual(), em: new Date().toISOString() });
+  }
+  async function buscarHistorico(uid) {
+    const snap = await db.collection('usuarios').doc(uid).collection('eventos').orderBy('em', 'desc').limit(30).get();
+    const lista = [];
+    snap.forEach(doc => lista.push(doc.data()));
+    return lista;
+  }
+
+  const TIPO_LABEL = { cadastro: '📝 Cadastro criado', login: '🔑 Login', aprovado: '✅ Aprovado', desabilitado: '⛔ Desabilitado', habilitado: '✅ Habilitado novamente', permissoesMenuAlteradas: '🧩 Permissões de menu alteradas', empresaAlterada: '🔁 Empresa alterada',
+    licencaRenovada: '🔑 Licença renovada', // V3.30
+    resetBanco: '⚠️ Banco de dados resetado', exclusaoUsuario: '⚠️ Usuário excluído', tentativaNegada: '🚫 Tentativa de acesso ao Admin negada' }; // V3.32 — Rodada 3B
+
+  // V2.75 — 10/07/2026 23:00: Bloco 5 — mesma lista de SEÇÕES (só o nível "seção", não os sub-itens
+  // dentro dela) usada em MENU_ESTRUTURA no app principal (M-Hub_V2.7x.html) — precisa ser mantida IGUAL
+  // à lista de lá manualmente (são dois arquivos separados). Se um dia uma seção nova for adicionada,
+  // renomeada ou removida no app principal, replique aqui também. Cada usuário pode ter uma restrição
+  // ADICIONAL de seções escondidas, guardada em usuarios/{uid}.menuSecoesOcultasExtra (por cima da
+  // configuração da empresa, que continua valendo pra todo mundo igual — ver getMenuSecoesOcultas() no
+  // app principal).
+  const MENU_SECOES_ADMIN = [
+    'Comercial', 'Projetos', 'Gestão de Projetos Culturais', 'Recursos e Operacional', 'Financeiro',
+    'Raio-X', 'Marketing', 'Metas e Objetivos', 'NPS (Satisfação do Cliente)', 'Contratos'
+  ];
+
+  // V2.100 — 13/07/2026: cache em memória da última lista carregada (aba atual) — usado pela busca/filtro
+  // (sugestão nº 4, sem nova consulta ao Firestore), pela exportação CSV (sugestão nº 6) e pelo botão
+  // "Reenviar redefinição de senha" (sugestão nº 7, pra achar o e-mail do usuário a partir do uid).
+  let ULTIMA_LISTA = [];
+
+  async function carregarLista() {
+    const el = document.getElementById('lista-usuarios');
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    if (!pronto) return;
+    try {
+      const usuarios = await listarUsuarios(abaAtual);
+      ULTIMA_LISTA = usuarios;
+      const buscaEl = document.getElementById('input-busca-usuarios');
+      if (buscaEl) buscaEl.value = '';
+      if (!usuarios.length) { el.innerHTML = '<div class="lista-vazia">Nenhum usuário aqui.</div>'; return; }
+      el.innerHTML = usuarios.map(u => renderItemUsuario(u)).join('');
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao carregar: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // V2.100 — 13/07/2026: filtra ULTIMA_LISTA (já carregada) por nome da empresa, e-mail ou empresaId — sem
+  // consultar o Firestore de novo. Re-renderiza só a lista, mantendo o resto da tela intacto.
+  function filtrarListaClique() {
+    const termo = (document.getElementById('input-busca-usuarios').value || '').toLowerCase().trim();
+    const el = document.getElementById('lista-usuarios');
+    const filtrados = !termo ? ULTIMA_LISTA : ULTIMA_LISTA.filter(u =>
+      String(u.nomeEmpresa || '').toLowerCase().includes(termo) ||
+      String(u.email || '').toLowerCase().includes(termo) ||
+      String(u.empresaId || '').toLowerCase().includes(termo)
+    );
+    if (!filtrados.length) { el.innerHTML = '<div class="lista-vazia">Nenhum usuário encontrado com esse termo.</div>'; return; }
+    el.innerHTML = filtrados.map(u => renderItemUsuario(u)).join('');
+  }
+
+  // V2.100 — 13/07/2026: exporta ULTIMA_LISTA (a aba atualmente carregada) como CSV (sugestão nº 6) — gera o
+  // arquivo inteiramente no navegador (sem backend nenhum) e dispara o download.
+  function exportarCsvClique() {
+    if (!ULTIMA_LISTA.length) { alert('Não há usuários carregados nesta aba pra exportar.'); return; }
+    const colunas = ['email', 'nomeEmpresa', 'empresaId', 'status', 'criadoEm', 'ultimoLogin', 'usoLeituras', 'usoEscritas'];
+    const linhas = [colunas.join(',')];
+    ULTIMA_LISTA.forEach(u => {
+      linhas.push(colunas.map(c => '"' + String(u[c] == null ? '' : u[c]).replace(/"/g, '""') + '"').join(','));
+    });
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aranuz-usuarios-' + abaAtual + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // V3.19 — 13/07/2026 (Rodada 2A): select de presets de licença (sugestão nº 5), reutilizado no
+  // formulário de aprovação e no de renovação.
+  function renderSelectDiasLicenca(id, valorPadrao) {
+    const opcoes = LICENCA_PRESETS.map(p => `<option value="${p.dias}" ${Number(valorPadrao) === p.dias ? 'selected' : (valorPadrao == null && p.dias === LICENCA_DIAS_PADRAO_NOVO_USUARIO ? 'selected' : '')}>${esc(p.label)}</option>`).join('');
+    return `<select id="${id}">${opcoes}</select>`;
+  }
+
+  function renderItemUsuario(u) {
+    const sugestaoId = slugify(u.nomeEmpresa);
+    // V2.75 — Bloco 5: contadores de uso do Firestore (leituras/escritas), acumulados pelo app principal
+    // em usuarios/{uid}.usoLeituras/usoEscritas — ver _registrarUsoFirestore_() no M-Hub_V2.7x.html.
+    const usoLeituras = Number(u.usoLeituras) || 0;
+    const usoEscritas = Number(u.usoEscritas) || 0;
+    return `
+      <div class="item-usuario" id="item-${u.uid}" data-email="${esc(u.email)}">
+        <div class="item-topo">
+          <div>
+            <div class="item-nome">${esc(u.nomeEmpresa || '(sem nome)')}</div>
+            <div class="item-detalhe">${esc(u.email)}<br>Cadastrado em ${fmtData(u.criadoEm)} · Último login: ${fmtData(u.ultimoLogin)}${u.empresaId ? ' · empresaId: <strong>' + esc(u.empresaId) + '</strong>' : ''}</div>
+            ${u.status === 'ativo' || u.status === 'suspensoPorVencimento' ? `<div class="item-uso" style="color:${_situacaoLicenca_(u).cor}; font-weight:600;">🔑 Licença: ${_situacaoLicenca_(u).texto}</div>` : ''}
+            ${u.renovacaoSolicitadaEm ? `<div class="item-uso" style="color:var(--accent-blue); font-weight:600;">🔔 Renovação solicitada pelo usuário em ${fmtData(u.renovacaoSolicitadaEm)}</div>` : ''}
+            <div class="item-uso">🔎 Uso do Firestore: <strong>${usoLeituras.toLocaleString('pt-BR')}</strong> leitura(s) · <strong>${usoEscritas.toLocaleString('pt-BR')}</strong> gravação(ões) — total acumulado desde sempre</div>
+          </div>
+          <span class="badge ${u.status}">${STATUS_LABEL[u.status] || u.status}</span>
+        </div>
+        <div class="item-acoes">
+          ${u.status === 'pendente' ? `<button class="btn-sm btn-verde" onclick="toggleAprovarForm('${u.uid}')">Aprovar</button>` : ''}
+          ${u.status === 'ativo' ? `<button class="btn-sm btn-vermelho" onclick="desabilitarClique('${u.uid}')">Desabilitar</button>` : ''}
+          ${u.status === 'suspensoPorVencimento' ? `<button class="btn-sm btn-vermelho" onclick="desabilitarClique('${u.uid}')">Desabilitar</button>` : ''}
+          ${u.status === 'desabilitado' ? `<button class="btn-sm btn-verde" onclick="reabilitarClique('${u.uid}')">Reabilitar</button>` : ''}
+          ${(u.status === 'ativo' || u.status === 'suspensoPorVencimento') ? `<button class="btn-sm btn-neutro" onclick="toggleRenovarLicencaForm('${u.uid}')">Renovar Licença</button>` : ''}
+          ${u.status === 'ativo' ? `<button class="btn-sm btn-neutro" onclick="toggleTrocarEmpresaForm('${u.uid}')">Trocar empresa</button>` : ''}
+          <button class="btn-sm btn-neutro" onclick="toggleHistorico('${u.uid}')">Ver histórico</button>
+          <button class="btn-sm btn-neutro" onclick="togglePermissoesMenu('${u.uid}')">Permissões de Menu</button>
+          ${u.empresaId ? `<button class="btn-sm btn-neutro" onclick="toggleNotasInternas_('${u.uid}', '${esc(u.empresaId).replace(/'/g, "\\'")}')">📝 Notas Internas</button>` : ''}
+          <button class="btn-sm btn-neutro" onclick="reenviarSenhaClique('${u.uid}')">Reenviar redefinição de senha</button>
+          ${u.empresaId ? `<button class="btn-sm btn-vermelho" onclick="toggleResetForm('${u.uid}')">⚠️ Resetar Banco de Dados</button>` : ''}
+          <button class="btn-sm btn-vermelho" onclick="toggleExcluirForm('${u.uid}')">⚠️ Excluir Usuário</button>
+        </div>
+        <div class="aprovar-form" id="aprovar-${u.uid}">
+          <label>empresaId (edite se quiser vincular a um banco já existente, ex: "marangatu")</label>
+          <input type="text" id="aprovar-input-${u.uid}" value="${esc(sugestaoId)}">
+          <label>Licença — por quantos dias este usuário pode acessar?</label>
+          ${renderSelectDiasLicenca('aprovar-dias-' + u.uid)}
+          <button class="btn-sm btn-verde" onclick="confirmarAprovarClique('${u.uid}')">Confirmar aprovação</button>
+        </div>
+        <!-- V2.100 — 13/07/2026: formulário "Trocar empresa" (sugestão nº 1) — mesmo padrão visual do
+             formulário de aprovação acima, mas pra um usuário que já está ATIVO (antes, só dava pra definir
+             o empresaId no momento da aprovação; não existia jeito de corrigir depois, sem editar direto no
+             Firebase Console). -->
+        <div class="aprovar-form" id="trocarempresa-${u.uid}">
+          <label>Novo empresaId (o usuário passa a acessar os dados desta empresa)</label>
+          <input type="text" id="trocarempresa-input-${u.uid}" value="${esc(u.empresaId || '')}">
+          <button class="btn-sm btn-verde" onclick="confirmarTrocarEmpresaClique('${u.uid}')">Confirmar troca</button>
+        </div>
+        <!-- V3.19 — 13/07/2026 (Rodada 2A): renovar licença — reinicia a contagem a partir de agora com
+             o novo prazo escolhido; funciona tanto pra quem ainda está dentro do prazo quanto pra quem já
+             teve o acesso cortado por vencimento (o status no Firestore continua "ativo" o tempo todo —
+             quem bloqueia de verdade é a data, checada nas Regras de Segurança). -->
+        <div class="aprovar-form" id="renovarlicenca-${u.uid}">
+          <label>Renovar por quantos dias, a partir de agora?</label>
+          ${renderSelectDiasLicenca('renovarlicenca-dias-' + u.uid, u.licencaDias)}
+          <button class="btn-sm btn-verde" onclick="confirmarRenovarLicencaClique('${u.uid}')">Confirmar renovação</button>
+        </div>
+        <div class="historico" id="historico-${u.uid}"><div class="lista-vazia">Carregando...</div></div>
+        <div class="permissoes-menu" id="permissoes-${u.uid}">
+          ${renderPermissoesMenuConteudo(u)}
+        </div>
+        <!-- V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): Notas Internas por Empresa (sugestão nº 33)
+             — texto livre, só o admin vê, guardado por empresaId (não por usuário — se a empresa tiver
+             mais de um usuário, a nota é a mesma pra todos, já que é sobre a EMPRESA). -->
+        ${u.empresaId ? `
+        <div class="permissoes-menu" id="notas-${u.uid}">
+          <div class="permissoes-menu-hint">Visível só neste Painel de Administração — o usuário nunca vê isso. Compartilhada entre todos os usuários da mesma empresa.</div>
+          <textarea id="notas-texto-${u.uid}" rows="3" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-main); color:var(--text-primary); font-size:12.5px; font-family:inherit; margin-bottom:8px;" placeholder="Ex: cliente pediu desconto, problema recorrente com X...">Carregando...</textarea>
+          <button class="btn-sm btn-verde" onclick="salvarNotasInternasClique_('${u.uid}', '${esc(u.empresaId).replace(/'/g, "\\'")}')">Salvar nota</button>
+          <div id="msg-notas-${u.uid}" style="font-size:11px; margin-top:8px; min-height:14px;"></div>
+        </div>` : ''}
+        <!-- V2.101 — 14/07/2026: "Resetar Banco de Dados" — apaga TODOS os documentos das coleções de
+             dados de negócio (clientes, projetos, financeiro etc.) sob empresas/{empresaId} deste usuário.
+             Dupla verificação: precisa digitar o empresaId exato pra habilitar o botão de confirmação (não
+             é só um clique de "OK"). Não afeta o cadastro/login do usuário (usuarios/{uid} continua intacto
+             — ele só vê a base vazia no próximo carregamento do app). -->
+        ${u.empresaId ? `
+        <div class="risco-form" id="reset-${u.uid}">
+          <div class="risco-form-aviso">⚠️ Isso apaga <strong>TODOS os dados cadastrados</strong> (clientes, projetos, financeiro, orçamentos, equipamentos, contratos, etc.) da empresa <strong>"${esc(u.empresaId)}"</strong> — ação sem volta, não existe backup automático disso pelo Painel. O login do usuário continua funcionando normalmente, só a base fica vazia.</div>
+          <label>Digite exatamente o empresaId (<strong>${esc(u.empresaId)}</strong>) para confirmar</label>
+          <input type="text" id="reset-input-${u.uid}" autocomplete="off" oninput="document.getElementById('reset-btn-${u.uid}').disabled = this.value.trim() !== '${esc(u.empresaId).replace(/'/g, "\'")}';">
+          <button class="btn-sm btn-vermelho" id="reset-btn-${u.uid}" disabled onclick="confirmarResetBancoClique('${u.uid}', '${esc(u.empresaId).replace(/'/g, "\'")}')">Confirmar Reset do Banco de Dados</button>
+          <div id="msg-reset-${u.uid}" style="font-size:11px; margin-top:8px; min-height:14px;"></div>
+        </div>` : ''}
+        <!-- V2.101 — 14/07/2026: "Excluir Usuário" — apaga o cadastro (usuarios/{uid} + histórico de
+             eventos) por completo. IMPORTANTE: o SDK do Firebase Auth usado no navegador não permite que um
+             administrador exclua a CONTA DE LOGIN (e-mail/senha) de outra pessoa — isso só é possível com o
+             SDK Admin, do lado do servidor (ex.: uma função no Apps Script/Cloud Functions). Por isso, além
+             de excluir aqui, também é preciso desabilitar o acesso (o cadastro sendo apagado já impede o
+             login de funcionar, já que o app não encontra mais usuarios/{uid} — mas a conta de e-mail/senha
+             em si continua existindo no projeto Firebase até ser removida manualmente no Console ou por uma
+             função de servidor). Dupla verificação: precisa digitar EXCLUIR pra habilitar o botão. -->
+        <div class="risco-form" id="excluir-${u.uid}">
+          <div class="risco-form-aviso">⚠️ Isso apaga o cadastro e todo o histórico de <strong>${esc(u.email)}</strong> — ação sem volta. A pessoa perde o acesso ao app imediatamente. A conta de login (e-mail/senha) em si só é totalmente removida do projeto Firebase manualmente no Console (limitação do SDK do navegador — veja comentário no código).</div>
+          <label>Digite <strong>EXCLUIR</strong> para confirmar</label>
+          <input type="text" id="excluir-input-${u.uid}" autocomplete="off" oninput="document.getElementById('excluir-btn-${u.uid}').disabled = this.value.trim().toUpperCase() !== 'EXCLUIR';">
+          <button class="btn-sm btn-vermelho" id="excluir-btn-${u.uid}" disabled onclick="confirmarExcluirUsuarioClique('${u.uid}')">Confirmar Exclusão do Usuário</button>
+          <div id="msg-excluir-${u.uid}" style="font-size:11px; margin-top:8px; min-height:14px;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // V2.75 — Bloco 5: conteúdo do painel de Permissões de Menu de um usuário — separado em função própria
+  // pra poder ser rechamado (renderPermissoesMenuConteudo) depois de salvar, sem precisar recarregar a
+  // lista inteira.
+  function renderPermissoesMenuConteudo(u) {
+    const ocultasExtra = Array.isArray(u.menuSecoesOcultasExtra) ? u.menuSecoesOcultasExtra : [];
+    const checkboxes = MENU_SECOES_ADMIN.map(sec => {
+      const visivel = !ocultasExtra.includes(sec);
+      return `<label><input type="checkbox" data-permissao-secao="${esc(sec)}" ${visivel ? 'checked' : ''}> ${esc(sec)}</label>`;
+    }).join('');
+    return `
+      <div class="permissoes-menu-hint">Desmarque uma seção pra escondê-la SÓ deste usuário — isso nunca reaparece uma seção que a empresa já escondeu pra todo mundo (em Configurações Avançadas &gt; Gerenciar Seções do Menu, dentro do app). O usuário precisa recarregar o app (ou esperar a revalidação de sessão) pra ver a mudança.</div>
+      <div class="permissoes-menu-lista" id="permissoes-lista-${u.uid}">${checkboxes}</div>
+      <button class="btn-sm btn-verde" onclick="salvarPermissoesMenuClique('${u.uid}')">Salvar Permissões</button>
+      <div id="msg-permissoes-${u.uid}" style="font-size:11px; margin-top:8px; min-height:14px;"></div>
+    `;
+  }
+
+  function toggleAprovarForm(uid) {
+    document.getElementById('aprovar-' + uid).classList.toggle('aberto');
+  }
+
+  async function confirmarAprovarClique(uid) {
+    const campo = document.getElementById('aprovar-input-' + uid);
+    const empresaId = campo.value.trim();
+    const diasSelect = document.getElementById('aprovar-dias-' + uid);
+    const dias = diasSelect ? Number(diasSelect.value) : LICENCA_DIAS_PADRAO_NOVO_USUARIO;
+    if (!empresaId) { alert('Digite um empresaId.'); return; }
+    try {
+      await aprovarUsuario(uid, empresaId, dias);
+    } catch (e) { alert('Erro ao aprovar: ' + (e && e.message || e)); return; }
+    // V2.92 — 11/07/2026: antes daqui tinha uma 2ª etapa (colar o Custom Claim via script externo,
+    // "Aranuz Admin Claims") — removida. A gravação de status/empresaId acima, no Firestore, já é tudo
+    // que as Regras de Segurança precisam pra liberar o acesso dessa pessoa.
+    await carregarLista();
+  }
+
+  async function desabilitarClique(uid) {
+    if (!confirm('Desabilitar o acesso deste usuário? Ele não vai mais conseguir entrar no app.')) return;
+    try { await desabilitarUsuario(uid); await carregarLista(); } catch (e) { alert('Erro: ' + (e && e.message || e)); }
+  }
+  async function reabilitarClique(uid) {
+    try { await reabilitarUsuario(uid); await carregarLista(); } catch (e) { alert('Erro: ' + (e && e.message || e)); }
+  }
+
+  // V3.19 — 13/07/2026 (Rodada 2A): "Renovar Licença" — mesmo padrão visual de toggleAprovarForm(), pra
+  // um usuário já ativo (ou com a licença vencida). Reinicia a contagem a partir de agora.
+  function toggleRenovarLicencaForm(uid) {
+    document.getElementById('renovarlicenca-' + uid).classList.toggle('aberto');
+  }
+  async function confirmarRenovarLicencaClique(uid) {
+    const diasSelect = document.getElementById('renovarlicenca-dias-' + uid);
+    const dias = diasSelect ? Number(diasSelect.value) : 30;
+    try {
+      await renovarLicencaUsuario(uid, dias);
+    } catch (e) { alert('Erro ao renovar: ' + (e && e.message || e)); return; }
+    await carregarLista();
+  }
+
+  // V2.100 — 13/07/2026: "Trocar empresa" (sugestão nº 1) — mesmo padrão de toggleAprovarForm()/
+  // confirmarAprovarClique(), só que pra um usuário já ATIVO.
+  function toggleTrocarEmpresaForm(uid) {
+    document.getElementById('trocarempresa-' + uid).classList.toggle('aberto');
+  }
+  async function confirmarTrocarEmpresaClique(uid) {
+    const campo = document.getElementById('trocarempresa-input-' + uid);
+    const novoEmpresaId = campo.value.trim();
+    if (!novoEmpresaId) { alert('Digite um empresaId.'); return; }
+    if (!confirm('Trocar o empresaId deste usuário para "' + novoEmpresaId + '"? Ele passa a acessar os dados dessa empresa a partir de agora.')) return;
+    try {
+      await trocarEmpresaUsuario(uid, novoEmpresaId);
+    } catch (e) { alert('Erro ao trocar: ' + (e && e.message || e)); return; }
+    await carregarLista();
+  }
+
+  // V2.100 — 13/07/2026: "Reenviar redefinição de senha" (sugestão nº 7). Usa sendPasswordResetEmail() do
+  // próprio SDK do Firebase Auth — este método não exige que o usuário-alvo esteja logado, então funciona
+  // a partir da sessão do administrador, pra QUALQUER e-mail do projeto. Não existe, no SDK do navegador,
+  // uma forma equivalente de reenviar o e-mail de CONFIRMAÇÃO DE CADASTRO de outra pessoa (isso só é
+  // possível via o SDK Admin, do lado do servidor) — se isso for importante, dá pra construir depois usando
+  // o Apps Script (que já tem OAuth configurado pro Firestore) chamando a Identity Toolkit API.
+  async function reenviarSenhaClique(uid) {
+    const item = document.getElementById('item-' + uid);
+    const email = item ? item.dataset.email : null;
+    if (!email) { alert('Não foi possível encontrar o e-mail deste usuário.'); return; }
+    if (!confirm('Enviar e-mail de redefinição de senha para ' + email + '?')) return;
+    try {
+      await auth.sendPasswordResetEmail(email);
+      alert('E-mail de redefinição de senha enviado para ' + email + '.');
+    } catch (e) { alert('Erro ao enviar: ' + (e && e.message || e)); }
+  }
+
+  async function toggleHistorico(uid) {
+    const el = document.getElementById('historico-' + uid);
+    const abrindo = !el.classList.contains('aberto');
+    el.classList.toggle('aberto');
+    if (!abrindo) return;
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    try {
+      const eventos = await buscarHistorico(uid);
+      if (!eventos.length) { el.innerHTML = '<div class="lista-vazia">Nenhum evento registrado ainda.</div>'; return; }
+      el.innerHTML = eventos.map(ev => '<div class="historico-item">' + (TIPO_LABEL[ev.tipo] || ev.tipo) + ' — ' + fmtData(ev.em) + (ev.admin ? ' — por <strong>' + esc(ev.admin) + '</strong>' : '') + '</div>').join('');
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): Notas Internas por Empresa (sugestão nº 33)
+  // ============================================================
+  // Guardadas em notasInternasEmpresa/{empresaId} — um documento por EMPRESA (não por usuário), já que a
+  // nota é sobre a empresa como um todo. Admin-only (ver Regras de Segurança).
+  async function toggleNotasInternas_(uid, empresaId) {
+    const el = document.getElementById('notas-' + uid);
+    const abrindo = el.classList.toggle('aberto');
+    if (!abrindo) return;
+    const textarea = document.getElementById('notas-texto-' + uid);
+    textarea.value = 'Carregando...'; textarea.disabled = true;
+    try {
+      const doc = await db.collection('notasInternasEmpresa').doc(empresaId).get();
+      textarea.value = doc.exists ? (doc.data().texto || '') : '';
+    } catch (e) { textarea.value = ''; }
+    textarea.disabled = false;
+  }
+  async function salvarNotasInternasClique_(uid, empresaId) {
+    const texto = document.getElementById('notas-texto-' + uid).value;
+    const msg = document.getElementById('msg-notas-' + uid);
+    try {
+      await db.collection('notasInternasEmpresa').doc(empresaId).set({ texto: texto, atualizadoEm: new Date().toISOString(), atualizadoPor: emailAdminAtual() }, { merge: true });
+      msg.textContent = 'Salvo.'; msg.style.color = 'var(--accent-green)';
+      setTimeout(() => { if (msg) msg.textContent = ''; }, 2000);
+    } catch (e) { msg.textContent = 'Erro ao salvar: ' + (e && e.message || e); msg.style.color = 'var(--accent-red)'; }
+  }
+
+  // V2.75 — Bloco 5: abre/fecha o painel de Permissões de Menu de um usuário (mesmo padrão de
+  // toggleHistorico() acima) — o conteúdo já vem pronto desde renderItemUsuario()/
+  // renderPermissoesMenuConteudo(), não precisa buscar nada novo do Firestore só pra abrir.
+  function togglePermissoesMenu(uid) {
+    const el = document.getElementById('permissoes-' + uid);
+    if (el) el.classList.toggle('aberto');
+  }
+
+  // Lê os checkboxes marcados/desmarcados deste usuário e grava a lista de seções ADICIONALMENTE
+  // escondidas (menuSecoesOcultasExtra) em usuarios/{uid} — o app principal une isso com a configuração
+  // da empresa a cada login/revalidação (ver getMenuSecoesOcultas() no M-Hub_V2.7x.html). Registra
+  // também um evento no histórico do usuário, pra ficar rastreável quem mudou o quê e quando.
+  async function salvarPermissoesMenuClique(uid) {
+    const lista = document.getElementById('permissoes-lista-' + uid);
+    const msgEl = document.getElementById('msg-permissoes-' + uid);
+    if (!lista) return;
+    const ocultas = [];
+    lista.querySelectorAll('[data-permissao-secao]').forEach(cb => { if (!cb.checked) ocultas.push(cb.dataset.permissaoSecao); });
+    try {
+      await db.collection('usuarios').doc(uid).update({ menuSecoesOcultasExtra: ocultas });
+      await db.collection('usuarios').doc(uid).collection('eventos').add({
+        tipo: 'permissoesMenuAlteradas',
+        detalhe: ocultas.length ? ('Seções escondidas: ' + ocultas.join(', ')) : 'Nenhuma seção escondida (todas liberadas)',
+        admin: emailAdminAtual(),
+        em: new Date().toISOString()
+      });
+      if (msgEl) { msgEl.textContent = 'Permissões salvas. O usuário vê a mudança no próximo login/revalidação.'; msgEl.style.color = 'var(--accent-green)'; }
+    } catch (e) {
+      if (msgEl) { msgEl.textContent = 'Erro ao salvar: ' + (e && e.message || e); msgEl.style.color = 'var(--accent-red)'; }
+    }
+  }
+
+  // ============================================================
+  // V2.101 — 14/07/2026: Resetar Banco de Dados / Excluir Usuário (dupla verificação)
+  // ============================================================
+  // Mesma lista de coleções de dados de negócio usada pelo app principal (TODAS_COLECOES_PARA_SYNC_COMPLETO
+  // no M-Hub_V3.0x.html) + as duas subcoleções de acesso de portal (fornecedoresAcesso/clientesAcesso) —
+  // precisa ser mantida IGUAL à lista de lá manualmente (dois arquivos separados). Se uma coleção nova for
+  // adicionada lá, replique aqui também, ou o reset vai deixar rastro pra trás.
+  const COLECOES_RESET_EMPRESA = [
+    'leads','clients','projects','history','anotacoes','fornecedores','financeiro','impostosReais',
+    'orcamentos','funcionarios','equipamentos','aquisicoesEquipamento','timeLogs','objetivos',
+    'resultadosChave','objetivosMes','catalogoLocacao','catalogoServicos','locacoes','locacoesItens',
+    'orcamentoItens','propostaServicoItens','npsRespostas','contratoTemplates','contratos',
+    'contratoAnexoItens','configuracoes','campanhas','calendarioConteudo','portfolio','orgaosFomento',
+    'projetosCulturais','fornecedoresAcesso','clientesAcesso'
+  ];
+
+  function toggleResetForm(uid) {
+    const el = document.getElementById('reset-' + uid);
+    if (el) el.classList.toggle('aberto');
+  }
+  function toggleExcluirForm(uid) {
+    const el = document.getElementById('excluir-' + uid);
+    if (el) el.classList.toggle('aberto');
+  }
+
+  // Apaga TODOS os documentos de uma coleção (em lotes de até 400, respeitando o limite de 500 operações
+  // por batch do Firestore) — client SDK não tem "apagar coleção inteira" pronto, então isso repete
+  // get()+batch delete até a coleção esvaziar.
+  async function _excluirColecaoInteira_(empresaId, nomeColecao) {
+    const colRef = db.collection('empresas').doc(empresaId).collection(nomeColecao);
+    let total = 0;
+    while (true) {
+      const snap = await colRef.limit(400).get();
+      if (snap.empty) break;
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      total += snap.size;
+      if (snap.size < 400) break;
+    }
+    return total;
+  }
+
+  async function confirmarResetBancoClique(uid, empresaIdEsperado) {
+    const campo = document.getElementById('reset-input-' + uid);
+    const msgEl = document.getElementById('msg-reset-' + uid);
+    const btn = document.getElementById('reset-btn-' + uid);
+    if (!campo || campo.value.trim() !== empresaIdEsperado) { if (msgEl) { msgEl.textContent = 'O empresaId digitado não confere.'; msgEl.style.color = 'var(--accent-red)'; } return; }
+    if (!confirm('Última confirmação: apagar TODOS os dados cadastrados da empresa "' + empresaIdEsperado + '"? Essa ação não pode ser desfeita.')) return;
+    btn.disabled = true;
+    if (msgEl) { msgEl.textContent = 'Apagando... isso pode levar alguns minutos numa base grande.'; msgEl.style.color = 'var(--text-secondary)'; }
+    try {
+      let totalApagado = 0;
+      for (const nomeColecao of COLECOES_RESET_EMPRESA) {
+        totalApagado += await _excluirColecaoInteira_(empresaIdEsperado, nomeColecao);
+      }
+      // O cadastro/login do usuário (usuarios/{uid}) NÃO é afetado — só os dados de negócio da empresa.
+      await db.collection('usuarios').doc(uid).collection('eventos').add({
+        tipo: 'bancoDadosResetado', detalhe: totalApagado + ' documento(s) apagado(s) em empresas/' + empresaIdEsperado,
+        admin: emailAdminAtual(), em: new Date().toISOString()
+      });
+      // Log de auditoria à parte também, pra dar pra ver resets sem precisar abrir o histórico de um
+      // usuário específico (mesmo padrão de logsTentativasAdmin).
+      await db.collection('logsResetsAdmin').add({
+        empresaId: empresaIdEsperado, uid: uid, totalApagado: totalApagado, admin: emailAdminAtual(), em: new Date().toISOString()
+      });
+      if (msgEl) { msgEl.textContent = 'Pronto — ' + totalApagado + ' documento(s) apagado(s). A base desta empresa está vazia agora.'; msgEl.style.color = 'var(--accent-green)'; }
+      campo.value = '';
+    } catch (e) {
+      if (msgEl) { msgEl.textContent = 'Erro ao resetar: ' + (e && e.message || e); msgEl.style.color = 'var(--accent-red)'; }
+      btn.disabled = false;
+    }
+  }
+
+  // V3.18 — 13/07/2026 (Rodada 1) — BUGFIX ("Erro ao excluir: Missing or insufficient permissions"):
+  // causa raiz era a Regra de Segurança de usuarios/{uid}/eventos/{eventoId}, que só permitia
+  // read/create — faltava delete. Como esta função apaga os eventos ANTES do documento do usuário, ela
+  // travava aqui pra qualquer usuário com histórico (praticamente todos). Corrigido na Regra (allow
+  // delete: if isAdmin()) — ver Regras_Firebase_V3_28.txt. Nada mudou aqui no código.
+  async function confirmarExcluirUsuarioClique(uid) {
+    const campo = document.getElementById('excluir-input-' + uid);
+    const msgEl = document.getElementById('msg-excluir-' + uid);
+    const btn = document.getElementById('excluir-btn-' + uid);
+    if (!campo || campo.value.trim().toUpperCase() !== 'EXCLUIR') { if (msgEl) { msgEl.textContent = 'Digite EXCLUIR (em maiúsculas) para confirmar.'; msgEl.style.color = 'var(--accent-red)'; } return; }
+    const item = document.getElementById('item-' + uid);
+    const email = item ? item.dataset.email : '(desconhecido)';
+    if (!confirm('Última confirmação: excluir o cadastro de ' + email + '? Essa ação não pode ser desfeita.')) return;
+    btn.disabled = true;
+    if (msgEl) { msgEl.textContent = 'Excluindo...'; msgEl.style.color = 'var(--text-secondary)'; }
+    try {
+      // Apaga a subcoleção de histórico (eventos) antes do próprio documento, pra não deixar lixo órfão.
+      const snapEventos = await db.collection('usuarios').doc(uid).collection('eventos').get();
+      if (!snapEventos.empty) {
+        const batch = db.batch();
+        snapEventos.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+      await db.collection('usuarios').doc(uid).delete();
+      // Log de auditoria à parte, já que o próprio documento do usuário (onde os eventos ficavam) acabou
+      // de ser apagado — sem isso, não sobraria nenhum rastro de quem excluiu o quê e quando.
+      await db.collection('logsExclusoesAdmin').add({
+        uid: uid, email: email, admin: emailAdminAtual(), em: new Date().toISOString()
+      });
+      if (msgEl) { msgEl.textContent = 'Cadastro excluído.'; msgEl.style.color = 'var(--accent-green)'; }
+      await carregarLista();
+    } catch (e) {
+      if (msgEl) { msgEl.textContent = 'Erro ao excluir: ' + (e && e.message || e); msgEl.style.color = 'var(--accent-red)'; }
+      btn.disabled = false;
+    }
+  }
+
+  // ============================================================
+  // V2.75 — Bloco 5: Log de Acesso Geral (todos os usuários)
+  // ============================================================
+  // Busca TODOS os usuários uma vez (sem filtro de status), pra montar um mapa uid -> {email,
+  // nomeEmpresa} e conseguir identificar de quem é cada evento sem precisar de uma leitura extra por
+  // evento (que ficaria caro com muitos eventos).
+  async function _mapaTodosUsuarios_() {
+    const snap = await db.collection('usuarios').get();
+    const mapa = {};
+    snap.forEach(doc => { mapa[doc.id] = doc.data(); });
+    return mapa;
+  }
+
+  // ============================================================
+  // V3.32 — 13/07/2026 (Rodada 3B, Auditoria e Logs): Central de Auditoria (sugestões nº 27-30)
+  // ============================================================
+  // Junta 4 fontes num só feed cronológico: eventos de usuário (login/cadastro/aprovação/licença/etc,
+  // "collection group"), resets de banco, exclusões de usuário e tentativas de acesso negadas ao Admin.
+  // Formato comum: { quando, tipo, quem, empresaId, admin, detalhe }.
+  let _ULTIMA_AUDITORIA_ = [];
+  async function carregarAuditoria_() {
+    const el = document.getElementById('auditoria-lista');
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    if (!pronto) return;
+    try {
+      const [mapaUsuarios, snapEventos, snapResets, snapExclusoes, snapTentativas] = await Promise.all([
+        _mapaTodosUsuarios_(),
+        // Consulta "collection group" — varre a subcoleção "eventos" de TODOS os usuários de uma vez.
+        // Precisa da Regra de Segurança própria (match /{path=**}/eventos/{eventoId}) e de um índice
+        // composto — se faltar algum dos dois, o catch abaixo explica qual.
+        db.collectionGroup('eventos').orderBy('em', 'desc').limit(100).get(),
+        db.collection('logsResetsAdmin').orderBy('em', 'desc').limit(50).get(),
+        db.collection('logsExclusoesAdmin').orderBy('em', 'desc').limit(50).get(),
+        db.collection('logsTentativasAdmin').orderBy('em', 'desc').limit(50).get()
+      ]);
+      const itens = [];
+      snapEventos.forEach(doc => {
+        const uid = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
+        const usuario = uid ? mapaUsuarios[uid] : null;
+        const d = doc.data();
+        itens.push({ quando: d.em, tipo: d.tipo, quem: usuario ? (usuario.nomeEmpresa || usuario.email) : (uid || '(usuário não encontrado)'), empresaId: usuario ? usuario.empresaId : null, admin: d.admin, detalhe: d.detalhe });
+      });
+      snapResets.forEach(doc => { const d = doc.data(); itens.push({ quando: d.em, tipo: 'resetBanco', quem: d.empresaId, empresaId: d.empresaId, admin: d.admin, detalhe: (d.totalApagado || 0) + ' documento(s) apagado(s)' }); });
+      snapExclusoes.forEach(doc => { const d = doc.data(); itens.push({ quando: d.em, tipo: 'exclusaoUsuario', quem: d.email, empresaId: null, admin: d.admin, detalhe: '' }); });
+      snapTentativas.forEach(doc => { const d = doc.data(); itens.push({ quando: d.em, tipo: 'tentativaNegada', quem: d.email, empresaId: null, admin: null, detalhe: '' }); });
+      itens.sort((a, b) => String(b.quando || '').localeCompare(String(a.quando || '')));
+      _ULTIMA_AUDITORIA_ = itens;
+      document.getElementById('auditoria-filtro-empresa').value = '';
+      document.getElementById('auditoria-busca').value = '';
+      renderizarAuditoria_();
+    } catch (e) {
+      const mensagem = String(e && e.message || e);
+      const pareceIndiceFaltando = /index/i.test(mensagem);
+      const pareceRegraFaltando = /permission|insufficient/i.test(mensagem);
+      let ajuda = '';
+      if (pareceIndiceFaltando) ajuda = ' Parece faltar um índice do Firestore — o link pra criar automaticamente costuma vir junto nesta mensagem de erro (veja o Console do navegador, F12, pra ver o link clicável completo).';
+      else if (pareceRegraFaltando) ajuda = ' Parece faltar a Regra de Segurança de "collection group" pra "eventos" — veja o comentário logo acima de match /{path=**}/eventos/{eventoId} nas Regras de Segurança.';
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red); text-align:left;">Erro ao carregar a auditoria: ' + esc(mensagem) + '.' + ajuda + '</div>';
+    }
+  }
+  // Re-renderiza _ULTIMA_AUDITORIA_ aplicando os filtros de empresa/texto — sem consultar o Firestore de
+  // novo (mesmo padrão de filtrarListaClique(), já usado na lista de usuários).
+  function _auditoriaFiltrada_() {
+    const empresaFiltro = (document.getElementById('auditoria-filtro-empresa').value || '').toLowerCase().trim();
+    const textoFiltro = (document.getElementById('auditoria-busca').value || '').toLowerCase().trim();
+    return _ULTIMA_AUDITORIA_.filter(it => {
+      if (empresaFiltro && !String(it.empresaId || '').toLowerCase().includes(empresaFiltro)) return false;
+      if (textoFiltro) {
+        const alvo = [it.quem, it.admin, it.detalhe, it.empresaId, TIPO_LABEL[it.tipo] || it.tipo].join(' ').toLowerCase();
+        if (!alvo.includes(textoFiltro)) return false;
+      }
+      return true;
+    });
+  }
+  function renderizarAuditoria_() {
+    const el = document.getElementById('auditoria-lista');
+    const itens = _auditoriaFiltrada_();
+    if (!itens.length) { el.innerHTML = '<div class="lista-vazia">Nenhum evento encontrado' + (_ULTIMA_AUDITORIA_.length ? ' com esse filtro.' : ' ainda — clique em Carregar.') + '</div>'; return; }
+    el.innerHTML = itens.slice(0, 150).map(it =>
+      '<div class="log-geral-item">' + (TIPO_LABEL[it.tipo] || it.tipo) + ' — <strong>' + esc(it.quem || '—') + '</strong>' + (it.empresaId ? ' (' + esc(it.empresaId) + ')' : '') + ' — ' + fmtData(it.quando) +
+      (it.admin ? ' — por <strong>' + esc(it.admin) + '</strong>' : '') + (it.detalhe ? '<br><span style="color:var(--text-muted);">' + esc(it.detalhe) + '</span>' : '') + '</div>'
+    ).join('');
+  }
+  // Exporta exatamente o que está filtrado na tela (mesmo padrão de exportarCsvClique(), já usado na
+  // lista de usuários).
+  function exportarAuditoriaCsv_() {
+    const itens = _auditoriaFiltrada_();
+    if (!itens.length) { alert('Nada pra exportar com esse filtro.'); return; }
+    const linhas = [['Data/Hora', 'Tipo', 'Quem', 'EmpresaId', 'Admin', 'Detalhe']];
+    itens.forEach(it => linhas.push([fmtData(it.quando), TIPO_LABEL[it.tipo] || it.tipo, it.quem || '', it.empresaId || '', it.admin || '', it.detalhe || '']));
+    const csv = linhas.map(l => l.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = 'aranuz-auditoria-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+  }
+
+  // ============================================================
+  // V3.32 — 13/07/2026 (Rodada 3B): Retenção de Logs (sugestão nº 31)
+  // ============================================================
+  // Apaga manualmente (sem cron/tarefa automática — este painel não tem backend próprio pra rodar sozinho
+  // todo dia) os registros de log mais antigos que N dias, nas coleções de auditoria e no Log de Erros do
+  // App. NUNCA mexe nos dados de negócio das empresas (só nas coleções de log, todas no nível raiz).
+  const COLECOES_LOG_RETENCAO = ['logsResetsAdmin', 'logsExclusoesAdmin', 'logsTentativasAdmin', 'logsErrosApp'];
+  async function aplicarRetencaoLogsClique_() {
+    const dias = Number(document.getElementById('input-retencao-dias').value) || 365;
+    if (!confirm('Apagar PERMANENTEMENTE todos os registros de log com mais de ' + dias + ' dia(s)? Essa ação não pode ser desfeita.')) return;
+    const msg = document.getElementById('msg-retencao-logs');
+    msg.textContent = 'Limpando...'; msg.style.color = 'var(--text-secondary)';
+    const limite = new Date(Date.now() - dias * 86400000).toISOString();
+    let totalApagado = 0;
+    try {
+      for (const colecao of COLECOES_LOG_RETENCAO) {
+        while (true) {
+          const snap = await db.collection(colecao).where('em', '<', limite).limit(400).get();
+          if (snap.empty) break;
+          const batch = db.batch();
+          snap.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+          totalApagado += snap.size;
+          if (snap.size < 400) break;
+        }
+      }
+      msg.textContent = totalApagado + ' registro(s) de log apagado(s).';
+      msg.style.color = 'var(--accent-green)';
+    } catch (e) {
+      msg.textContent = 'Erro (parcial: ' + totalApagado + ' apagado(s) até falhar): ' + (e && e.message || e);
+      msg.style.color = 'var(--accent-red)';
+    }
+  }
+
+  // ============================================================
+  // V2.100 — 13/07/2026: Uso do Firestore por Empresa (sugestão nº 9)
+  // V3.31 — 13/07/2026 (Rodada 3A): agora ordena por maior uso primeiro (não mais alfabético) e mostra só
+  // o Top 10 por padrão (sugestão nº 19) — botão "Ver todas" pra lista completa.
+  // ============================================================
+  // Busca TODOS os usuários (todos os status) e soma usoLeituras/usoEscritas agrupando por empresaId — dá
+  // uma visão por empresa, complementar ao contador já existente por usuário individual (item-uso, dentro
+  // de cada card). Usuários sem empresaId (ainda pendentes) entram num grupo "(sem empresa ainda)".
+  let _usoPorEmpresaMostrarTodas_ = false;
+  async function carregarUsoPorEmpresa() {
+    const el = document.getElementById('uso-por-empresa-lista');
+    el.innerHTML = '<div class="lista-vazia">Calculando...</div>';
+    if (!pronto) return;
+    try {
+      const snap = await db.collection('usuarios').get();
+      const porEmpresa = {};
+      snap.forEach(doc => {
+        const u = doc.data();
+        const chave = u.empresaId || '(sem empresa ainda)';
+        if (!porEmpresa[chave]) porEmpresa[chave] = { leituras: 0, escritas: 0, usuarios: 0 };
+        porEmpresa[chave].leituras += Number(u.usoLeituras) || 0;
+        porEmpresa[chave].escritas += Number(u.usoEscritas) || 0;
+        porEmpresa[chave].usuarios += 1;
+      });
+      let chaves = Object.keys(porEmpresa).sort((a, b) => (porEmpresa[b].leituras + porEmpresa[b].escritas) - (porEmpresa[a].leituras + porEmpresa[a].escritas));
+      if (!chaves.length) { el.innerHTML = '<div class="lista-vazia">Nenhum usuário cadastrado ainda.</div>'; return; }
+      const totalEmpresas = chaves.length;
+      if (!_usoPorEmpresaMostrarTodas_) chaves = chaves.slice(0, 10);
+      // V3.17 — item 15 da lista de robustez: se o alerta estiver ativado, destaca em vermelho a empresa
+      // cujo total (leituras + gravações) passar do limite configurado acima.
+      const alertaAtivo = document.getElementById('chk-alerta-limite-uso').checked;
+      const limite = Number(document.getElementById('input-limite-uso').value) || 0;
+      el.innerHTML = chaves.map((chave, i) => {
+        const r = porEmpresa[chave];
+        const total = r.leituras + r.escritas;
+        const acimaDoLimite = alertaAtivo && limite > 0 && total > limite;
+        const estilo = acimaDoLimite ? 'color:var(--accent-red); font-weight:700;' : '';
+        return '<div class="log-geral-item" style="' + estilo + '">#' + (i + 1) + ' <strong>' + esc(chave) + '</strong> — ' + r.usuarios + ' usuário(s) — '
+          + r.leituras.toLocaleString('pt-BR') + ' leitura(s) · ' + r.escritas.toLocaleString('pt-BR') + ' gravação(ões)'
+          + (acimaDoLimite ? ' ⚠️ acima do limite (' + limite.toLocaleString('pt-BR') + ')' : '') + '</div>';
+      }).join('') + (totalEmpresas > 10 ? '<button class="btn-neutro btn-sm" style="margin-top:8px;" onclick="_usoPorEmpresaMostrarTodas_ = !_usoPorEmpresaMostrarTodas_; carregarUsoPorEmpresa();">' + (_usoPorEmpresaMostrarTodas_ ? 'Mostrar só Top 10' : 'Ver todas (' + totalEmpresas + ')') + '</button>' : '');
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao calcular: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): Crescimento e Atividade (sugestões nº 21 e 22)
+  // ============================================================
+  // Agrupa "criadoEm" de todos os usuários por semana (últimas 8) pra um gráfico de barras simples (CSS,
+  // sem biblioteca) e lista empresas ATIVAS cujo último login (o mais recente entre os usuários daquela
+  // empresa) passou do limite de dias configurado.
+  async function carregarCrescimentoEAtividade_() {
+    const elGrafico = document.getElementById('grafico-crescimento');
+    const elInativas = document.getElementById('empresas-inativas-lista');
+    elGrafico.innerHTML = '<div class="lista-vazia">Calculando...</div>';
+    elInativas.innerHTML = '';
+    if (!pronto) return;
+    try {
+      const snap = await db.collection('usuarios').get();
+      const usuarios = []; snap.forEach(doc => usuarios.push(doc.data()));
+
+      // --- Gráfico: cadastros por semana (últimas 8) ---
+      const semanas = []; // cada item: { inicio: Date, fim: Date, label, total }
+      const hoje = new Date();
+      for (let i = 7; i >= 0; i--) {
+        const fim = new Date(hoje); fim.setDate(fim.getDate() - (i * 7));
+        const inicio = new Date(fim); inicio.setDate(inicio.getDate() - 6);
+        semanas.push({ inicio, fim, label: String(inicio.getDate()).padStart(2,'0') + '/' + String(inicio.getMonth()+1).padStart(2,'0'), total: 0 });
+      }
+      usuarios.forEach(u => {
+        if (!u.criadoEm) return;
+        const d = new Date(u.criadoEm);
+        for (const s of semanas) { if (d >= s.inicio && d <= s.fim) { s.total++; break; } }
+      });
+      const maxTotal = Math.max(1, ...semanas.map(s => s.total));
+      elGrafico.innerHTML = '<div style="display:flex; align-items:flex-end; gap:6px; height:90px;">' +
+        semanas.map(s => `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
+          <div style="font-size:10px; color:var(--text-secondary);">${s.total}</div>
+          <div style="width:100%; background:var(--accent-blue); border-radius:4px 4px 0 0; height:${Math.max(4, (s.total / maxTotal) * 60)}px;"></div>
+          <div style="font-size:9px; color:var(--text-muted);">${s.label}</div>
+        </div>`).join('') + '</div>';
+
+      // --- Empresas inativas (status ativo, sem login recente) ---
+      const diasLimite = Number(document.getElementById('input-dias-inatividade').value) || 30;
+      const porEmpresa = {};
+      usuarios.forEach(u => {
+        if (u.status !== 'ativo' || !u.empresaId) return;
+        const chave = u.empresaId;
+        const ultimo = u.ultimoLogin ? new Date(u.ultimoLogin).getTime() : 0;
+        if (!porEmpresa[chave] || ultimo > porEmpresa[chave]) porEmpresa[chave] = ultimo;
+      });
+      const agora = Date.now();
+      const inativas = Object.keys(porEmpresa)
+        .map(chave => ({ chave, diasSemLogin: porEmpresa[chave] ? Math.floor((agora - porEmpresa[chave]) / 86400000) : null }))
+        .filter(e => e.diasSemLogin === null || e.diasSemLogin >= diasLimite)
+        .sort((a, b) => (b.diasSemLogin || 99999) - (a.diasSemLogin || 99999));
+      if (!inativas.length) {
+        elInativas.innerHTML = '<div class="lista-vazia">Nenhuma empresa ativa inativa há ' + diasLimite + '+ dia(s).</div>';
+      } else {
+        elInativas.innerHTML = '<div style="font-size:11px; font-weight:600; margin-bottom:6px;">⚠️ ' + inativas.length + ' empresa(s) inativa(s):</div>' +
+          inativas.map(e => '<div class="log-geral-item"><strong>' + esc(e.chave) + '</strong> — ' + (e.diasSemLogin === null ? 'nunca logou' : 'sem login há ' + e.diasSemLogin + ' dia(s)') + '</div>').join('');
+      }
+    } catch (e) {
+      elGrafico.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao calcular: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): Saúde do Sistema (sugestões nº 23, 24 e 26)
+  // ============================================================
+  // NÃO faz um "ping" de verdade em cada planilha/Apps Script de cada empresa — cada empresa tem seu
+  // próprio deployment separado, o Admin não tem acesso direto a essas URLs (ficam salvas no dispositivo
+  // do próprio usuário, não no Firestore) e chamar dezenas de URLs externas diferentes desta tela traria
+  // problemas de CORS/tempo de resposta. Em vez disso, usa um PROXY indireto: erros que o próprio app
+  // relatou sozinho em logsErrosApp (Log de Erros do App) nas últimas 24h, destacando os que mencionam
+  // palavras relacionadas à planilha/sincronização — é o mesmo sinal que aparece pra você de qualquer
+  // forma quando o usuário tenta usar e falha, só que agrupado e mais fácil de ver aqui.
+  async function verificarSaudeSistema_() {
+    const el = document.getElementById('saude-sistema-resumo');
+    el.innerHTML = '<div class="lista-vazia">Verificando...</div>';
+    if (!pronto) return;
+    const agora = new Date();
+    try {
+      // "Firestore respondendo" — se esta consulta funcionou, o Firestore respondeu.
+      const desde = new Date(agora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const snap = await db.collection('logsErrosApp').where('em', '>=', desde).get().catch(() => null);
+      let totalErros = 0, possivelSync = 0, ultimos = [];
+      if (snap) {
+        snap.forEach(doc => {
+          const d = doc.data(); totalErros++;
+          const texto = (String(d.mensagem || '') + ' ' + String(d.detalhe || '')).toLowerCase();
+          if (/planilha|sheet|sincroniz|sync/.test(texto)) possivelSync++;
+          ultimos.push(d);
+        });
+        ultimos.sort((a, b) => String(b.em || '').localeCompare(String(a.em || '')));
+        ultimos = ultimos.slice(0, 5);
+      }
+      el.innerHTML = `
+        <div class="log-geral-item"><strong>Firestore:</strong> <span style="color:var(--accent-green); font-weight:700;">Respondendo</span> — verificado às ${agora.toLocaleTimeString('pt-BR')}</div>
+        <div class="log-geral-item"><strong>Erros reportados pelo app (últimas 24h):</strong> ${totalErros}${possivelSync ? ' <span style="color:var(--accent-amber); font-weight:700;">(' + possivelSync + ' parecem envolver planilha/sincronização)</span>' : ''}</div>
+        ${ultimos.length ? '<div style="font-size:10.5px; color:var(--text-muted); margin-top:6px;">Últimos erros:</div>' + ultimos.map(d => '<div class="log-geral-item" style="font-size:10.5px;">' + fmtData(d.em) + (d.empresaId ? ' · ' + esc(d.empresaId) : '') + ' — ' + esc(String(d.mensagem || d.detalhe || '(sem detalhe)').slice(0,140)) + '</div>').join('') : ''}
+        <div style="font-size:10px; color:var(--text-muted); margin-top:8px; line-height:1.5;">Não é um teste ativo em cada planilha de cada empresa (cada uma tem sua própria URL, salva só no dispositivo do usuário) — é baseado em erros que o próprio app já relatou sozinho.</div>
+      `;
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao verificar: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // V3.31 — 13/07/2026 (Rodada 3A, Monitoramento): Ranking por Volume de Dados (sugestão nº 25)
+  // ============================================================
+  const RANKING_VOLUME_COLECOES = ['leads', 'clients', 'projects', 'orcamentos', 'financeiro', 'contratos'];
+  async function carregarRankingVolumeDados_() {
+    const el = document.getElementById('ranking-volume-lista');
+    el.innerHTML = '<div class="lista-vazia">Calculando (pode levar alguns segundos)...</div>';
+    if (!pronto) return;
+    try {
+      const snapUsuarios = await db.collection('usuarios').get();
+      const empresaIds = Array.from(new Set(snapUsuarios.docs.map(d => d.data().empresaId).filter(Boolean)));
+      if (!empresaIds.length) { el.innerHTML = '<div class="lista-vazia">Nenhuma empresa cadastrada ainda.</div>'; return; }
+      const resultados = [];
+      for (const empresaId of empresaIds) {
+        let total = 0; const porColecao = {};
+        for (const colecao of RANKING_VOLUME_COLECOES) {
+          try {
+            const colRef = db.collection('empresas').doc(empresaId).collection(colecao);
+            // Contagem agregada (.count()) — não baixa os documentos, só o número. Se o SDK não suportar
+            // (versão antiga do navegador em cache), cai pro .get().size tradicional.
+            const n = colRef.count ? (await colRef.count().get()).data().count : (await colRef.get()).size;
+            porColecao[colecao] = n; total += n;
+          } catch (eCol) { porColecao[colecao] = 0; }
+        }
+        resultados.push({ empresaId, total, porColecao });
+      }
+      resultados.sort((a, b) => b.total - a.total);
+      el.innerHTML = resultados.slice(0, 10).map((r, i) => `<div class="log-geral-item">#${i+1} <strong>${esc(r.empresaId)}</strong> — ${r.total.toLocaleString('pt-BR')} registro(s) no total
+        <div style="font-size:10px; color:var(--text-muted);">${RANKING_VOLUME_COLECOES.map(c => c + ': ' + (r.porColecao[c]||0)).join(' · ')}</div></div>`).join('');
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao calcular: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // V2.100 — 13/07/2026: Administradores adicionais (sugestão nº 2)
+  // ============================================================
+  // Lê/grava config/admins { emails: [...] } — ver isAdmin() nas Regras de Segurança. O e-mail "de fábrica"
+  // (aranuzworkspace@gmail.com) nunca aparece nesta lista (ele é sempre admin, garantido pela própria
+  // função isAdmin(), independente deste documento existir ou não) — esta lista é só pros ADICIONAIS.
+  async function carregarAdmins() {
+    const el = document.getElementById('lista-admins');
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    if (!pronto) return;
+    try {
+      const doc = await db.collection('config').doc('admins').get();
+      const emails = (doc.exists && Array.isArray(doc.data().emails)) ? doc.data().emails : [];
+      if (!emails.length) { el.innerHTML = '<div class="lista-vazia">Nenhum administrador adicional cadastrado.</div>'; return; }
+      el.innerHTML = emails.map(email => (
+        '<div class="log-geral-item" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">'
+        + '<span>' + esc(email) + '</span>'
+        + '<button class="btn-sm btn-vermelho" onclick="removerAdminClique(\'' + esc(email).replace(/'/g, "\\'") + '\')">Remover</button>'
+        + '</div>'
+      )).join('');
+    } catch (e) {
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red);">Erro ao carregar: ' + esc(e && e.message || e) + '</div>';
+    }
+  }
+  async function adicionarAdminClique() {
+    const campo = document.getElementById('input-novo-admin');
+    const email = (campo.value || '').trim().toLowerCase();
+    if (!email || email.indexOf('@') === -1) { alert('Digite um e-mail válido.'); return; }
+    if (email === 'aranuzworkspace@gmail.com') { alert('Esse e-mail já é administrador de fábrica — não precisa adicionar.'); return; }
+    try {
+      await db.collection('config').doc('admins').set(
+        { emails: firebase.firestore.FieldValue.arrayUnion(email) }, { merge: true }
+      );
+      campo.value = '';
+      await carregarAdmins();
+    } catch (e) { alert('Erro ao adicionar: ' + (e && e.message || e)); }
+  }
+  async function removerAdminClique(email) {
+    if (!confirm('Remover ' + email + ' da lista de administradores? Essa pessoa deixa de conseguir acessar o Painel.')) return;
+    try {
+      await db.collection('config').doc('admins').update(
+        { emails: firebase.firestore.FieldValue.arrayRemove(email) }
+      );
+      await carregarAdmins();
+    } catch (e) { alert('Erro ao remover: ' + (e && e.message || e)); }
+  }
+
+  // ============================================================
+  // V2.100 — 13/07/2026: Tentativas de Acesso Negadas (sugestão nº 10)
+  // V3.32 — Rodada 3B: exibição migrada pra dentro da Central de Auditoria (feed unificado) — a
+  // gravação em logsTentativasAdmin continua igual, ver registrarTentativaNegada() mais acima.
+  // ============================================================
+
+  // ============================================================
+  // V3.17 — item 35 da lista de robustez: Log de Erros do App (substituto leve do Sentry)
+  // ============================================================
+  async function carregarLogErrosApp() {
+    const el = document.getElementById('log-erros-app-lista');
+    el.innerHTML = '<div class="lista-vazia">Carregando...</div>';
+    if (!pronto) return;
+    try {
+      const snap = await db.collection('logsErrosApp').orderBy('em', 'desc').limit(50).get();
+      if (snap.empty) { el.innerHTML = '<div class="lista-vazia">Nenhum erro registrado até agora. 🎉</div>'; return; }
+      const linhas = [];
+      snap.forEach(doc => {
+        const e = doc.data();
+        linhas.push('<div class="log-geral-item"><strong>' + esc(e.mensagem || '(sem mensagem)') + '</strong> — ' + fmtData(e.em)
+          + '<br><span style="color:var(--text-muted);">Empresa: ' + esc(e.empresaId || '(desconhecida)') + ' · Versão: ' + esc(e.versaoApp || '?') + ' · Origem: ' + esc(e.origem || '?') + '</span>'
+          + (e.detalhe ? '<br><span style="color:var(--text-muted); font-size:10.5px;">' + esc(e.detalhe).slice(0, 300) + '</span>' : '')
+          + '</div>');
+      });
+      el.innerHTML = linhas.join('');
+    } catch (e) {
+      const mensagem = String(e && e.message || e);
+      const pareceRegraFaltando = /permission|insufficient/i.test(mensagem);
+      let ajuda = '';
+      if (pareceRegraFaltando) ajuda = ' Parece faltar a Regra de Segurança para a coleção "logsErrosApp" — adicione: <code>match /logsErrosApp/{docId} { allow create: if request.auth != null; allow read: if request.auth != null && request.auth.token.email == "SEU_EMAIL_DE_ADMIN"; }</code>.';
+      el.innerHTML = '<div class="lista-vazia" style="color:var(--accent-red); text-align:left;">Erro ao carregar: ' + esc(mensagem) + '.' + ajuda + '</div>';
+    }
+  }
+
+  iniciar();
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // Aranuz — Regras de Segurança do Firestore — VERSÃO ATUAL: V3.32 (13/07/2026, Rodada 3B)
+    // Pareada com Aranuz_App_V3_32.html / Aranuz_Sheets-Usuario_V3_32.gs / Aranuz_Admin_V3_32.html.
+    // Mudanças: delete liberado em logsResetsAdmin/logsExclusoesAdmin/logsTentativasAdmin/
+    // logsErrosApp (Retenção de Logs) + nova coleção notasInternasEmpresa (Notas Internas).
+    // Reforça as ações administrativas do Painel de Administração (Resetar
+    // Banco de Dados / Excluir Usuário) com permissão checada no SERVIDOR,
+    // não só a confirmação de texto na tela.
+    //
+    // COMO PUBLICAR:
+    // 1. Abra console.firebase.google.com > seu projeto (aranuz-6c80c) > Firestore Database > aba "Regras".
+    // 2. Substitua o conteúdo INTEIRO pelo texto deste arquivo.
+    // 3. Ajuste o e-mail de administrador "de fábrica" logo abaixo (isAdmin()), se necessário.
+    // 4. Clique em "Publicar".
+    // ============================================================
+
+    // — Administrador "de fábrica" (sempre válido, garantido, independente de
+    //   qualquer documento existir) + lista de administradores adicionais
+    //   guardada em config/admins.emails (gerenciável dentro do próprio
+    //   Painel de Administração, sem precisar editar esta regra de novo).
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == "aranuzworkspace@gmail.com" ||
+        (
+          exists(/databases/$(database)/documents/config/admins) &&
+          request.auth.token.email in get(/databases/$(database)/documents/config/admins).data.emails
+        )
+      );
+    }
+
+    // — Dono da conta: usuário autenticado cujo próprio documento
+    //   usuarios/{uid} diz que ele pertence à empresa "empresaId" e está com
+    //   status "ativo". Usada para liberar o uso normal do app (não as ações
+    //   administrativas em massa, que exigem isAdmin()).
+    function pertenceAEmpresa(empresaId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.empresaId == empresaId &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.status == "ativo" &&
+        licencaValida(get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data);
+    }
+
+    // V3.29 — 13/07/2026 (Rodada 2A, Sistema de Licenças): bloqueio real de acesso quando a licença
+    // venceu — o Painel de Administração grava "licencaCorteEm" (vencimento + dias de tolerância/grace
+    // period) ao aprovar ou renovar um usuário. licencaDias == 0 (ou o campo não existir, cadastros de
+    // antes desta rodada) significa "sem prazo" — nunca expira. Reaproveita o mesmo get() de
+    // pertenceAEmpresa() acima (não gera leitura extra).
+    function licencaValida(dados) {
+      return !('licencaDias' in dados) || dados.licencaDias == 0 ||
+        !('licencaCorteEm' in dados) || request.time <= dados.licencaCorteEm;
+    }
+
+    // ------------------------------------------------------------
+    // Dados de cada empresa (leads, clientes, projetos, financeiro, lixeira, etc.)
+    // ------------------------------------------------------------
+    // Uso normal do app: só quem pertence àquela empresa (e está ativo) pode
+    // ler/gravar documento por documento. Cobre TODAS as ~29 coleções por
+    // empresa, incluindo a "lixeira" (soft delete) adicionada na V3.27 — não
+    // precisa de regra própria, já cai nesta regra genérica. As ações em
+    // MASSA do Painel de Administração (apagar a coleção inteira de uma
+    // empresa, no "Resetar Banco de Dados") só funcionam pra quem for
+    // isAdmin() — um usuário comum não consegue apagar a própria base inteira
+    // mesmo tentando direto pelo Console do navegador, só através do fluxo
+    // normal do app (editar/excluir um registro de cada vez).
+    match /empresas/{empresaId}/{colecao}/{docId} {
+      allow read, write: if pertenceAEmpresa(empresaId) || isAdmin();
+    }
+
+    // ------------------------------------------------------------
+    // Cadastro dos usuários do app (login, aprovação, empresaId, status)
+    // ------------------------------------------------------------
+    match /usuarios/{uid} {
+      // Qualquer pessoa logada pode ler o PRÓPRIO documento (necessário no
+      // login, pra saber empresaId/status) — isAdmin() também pode ler/gravar
+      // qualquer um, pra aprovar/desabilitar/excluir contas.
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      // Criação: só o próprio usuário recém-cadastrado (auto-cadastro),
+      // sempre começando como "pendente" (a aprovação pra "ativo" é feita
+      // pelo admin, nunca pelo próprio usuário).
+      allow create: if request.auth != null && request.auth.uid == uid &&
+        request.resource.data.status == "pendente";
+      // Atualização: o próprio usuário só pode alterar campos que não sejam
+      // status/empresaId (evita se auto-aprovar) — o admin pode alterar
+      // qualquer campo, incluindo excluir o documento inteiro (Excluir Usuário).
+      // V3.30 — 13/07/2026 (Rodada 2B): EXCEÇÃO específica — o próprio usuário pode marcar a SI MESMO
+      // como "suspensoPorVencimento" (status novo, separado de "desabilitado"), e SÓ nesse sentido
+      // (ativo → suspensoPorVencimento), e SÓ quando a licença já venceu de verdade (confere
+      // licencaCorteEm contra request.time, que o cliente não controla). Não dá pra usar isso pra se
+      // auto-aprovar nem pra voltar a "ativo" sozinho — só documenta um corte que a Regra abaixo
+      // (pertenceAEmpresa/licencaValida) já estava aplicando de qualquer forma.
+      allow update: if isAdmin() || (
+        request.auth != null && request.auth.uid == uid &&
+        request.resource.data.empresaId == resource.data.empresaId && (
+          request.resource.data.status == resource.data.status ||
+          (
+            resource.data.status == "ativo" && request.resource.data.status == "suspensoPorVencimento" &&
+            "licencaCorteEm" in resource.data && request.time > resource.data.licencaCorteEm
+          )
+        )
+      );
+      allow delete: if isAdmin();
+
+      match /eventos/{eventoId} {
+        allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+        allow create: if request.auth != null; // login/cadastro grava por conta própria
+        // V3.28 — 13/07/2026 (Rodada 1): faltava "delete" aqui — era a causa real do erro "Missing or
+        // insufficient permissions" ao excluir um usuário no Painel de Administração (ele apaga o
+        // histórico de eventos ANTES do documento do usuário; sem esta regra, batch.delete falhava pra
+        // qualquer usuário com histórico). Só o admin apaga.
+        allow delete: if isAdmin();
+      }
+    }
+    // Consulta "collection group" usada pelo Log de Acesso Geral do Painel de
+    // Administração (varre a subcoleção "eventos" de TODOS os usuários de
+    // uma vez) — precisa desta regra separada, além da regra aninhada acima.
+    match /{path=**}/eventos/{eventoId} {
+      allow read: if isAdmin();
+    }
+
+    // ------------------------------------------------------------
+    // Coleções usadas só pelo Painel de Administração
+    // ------------------------------------------------------------
+    match /config/{docId} {
+      allow read, write: if isAdmin();
+    }
+    // V3.32 — 13/07/2026 (Rodada 3B): allow delete adicionado nas 3 coleções abaixo — usado pela
+    // Retenção de Logs do Admin (apagar registros mais antigos que N dias, sob demanda).
+    match /logsResetsAdmin/{docId} {
+      allow read, create, delete: if isAdmin();
+    }
+    match /logsExclusoesAdmin/{docId} {
+      allow read, create, delete: if isAdmin();
+    }
+    match /logsTentativasAdmin/{docId} {
+      allow read, delete: if isAdmin();
+      allow create: if request.auth != null; // gravado antes de deslogar quem tentou sem ser admin
+    }
+
+    // ------------------------------------------------------------
+    // Log de Erros do App (substituto leve do Sentry, sem conta externa)
+    // ------------------------------------------------------------
+    // Qualquer usuário logado pode CRIAR um registro de erro (é o próprio app
+    // reportando uma falha que aconteceu com ele) — ninguém, exceto o admin,
+    // pode LER a lista inteira (evita expor detalhes técnicos/stack traces
+    // pra outros usuários).
+    match /logsErrosApp/{docId} {
+      allow create: if request.auth != null;
+      allow read, delete: if isAdmin(); // V3.32 — delete adicionado pra Retenção de Logs do Admin
+    }
+
+    // ------------------------------------------------------------
+    // V3.32 — 13/07/2026 (Rodada 3B): Notas Internas por Empresa (sugestão nº 33) — texto livre,
+    // um documento por empresaId, só o admin vê/edita (o usuário da empresa nunca acessa isso).
+    // ------------------------------------------------------------
+    match /notasInternasEmpresa/{empresaId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ------------------------------------------------------------
+    // E-mails e Alertas: dedup dos Alertas Críticos por E-mail
+    // ------------------------------------------------------------
+    // Um documento por alerta já enviado (doc id = empresaId + "_" + key). Qualquer
+    // usuário logado pode ler (pra saber se já foi enviado, antes de mandar de novo)
+    // e criar (marcar como enviado); não deveria precisar de update/delete.
+    match /alertasEmailEnviados/{docId} {
+      allow read, create: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------
+    // Colaboração em Tempo Real (presença — "quem está vendo/editando")
+    // ------------------------------------------------------------
+    // Um documento por registro (Lead/Cliente/Projeto) atualmente aberto por alguém, com heartbeat.
+    // Qualquer usuário logado pode ler (pra saber se alguém mais está no mesmo registro), criar,
+    // atualizar (heartbeat) e apagar (ao fechar o modal) sua própria presença.
+    match /presencaEdicao/{docId} {
+      allow read, create, update, delete: if request.auth != null;
+    }
+
+    // ------------------------------------------------------------
+    // Auditoria de ações administrativas destrutivas feitas dentro do app
+    // principal (Restaurar Configurações de Fábrica, Restaurar Base a partir
+    // de um Backup) — só cria (o próprio app registrando a ação); leitura só
+    // pro admin (mesmo padrão de logsErrosApp), já que não existe tela dentro
+    // do app principal pra ver esse log (fica disponível pra consulta direta
+    // no Firestore ou por uma extensão futura do Painel de Administração).
+    // ------------------------------------------------------------
+    match /logsAdminAcoesEmpresa/{docId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
+    }
+
+    // ------------------------------------------------------------
+    // AVISO — Portal do Cliente / Portal do Fornecedor (fornecedoresAcesso,
+    // clientesAcesso) já ficam cobertos pela regra genérica de
+    // /empresas/{empresaId}/{colecao}/{docId} acima, PARA O USO DENTRO DO APP
+    // PRINCIPAL (convidar/revogar acesso). Se você usa arquivos separados de
+    // portal externo (onde o próprio cliente/fornecedor faz login fora deste
+    // app), aquele login pode usar um modelo de autenticação diferente do
+    // "pertenceAEmpresa()" definido aqui — me envie o(s) arquivo(s) do Portal
+    // se quiser que eu desenhe a regra específica pra esse acesso externo.
+    // ------------------------------------------------------------
+
+    // ------------------------------------------------------------
+    // Portal de Orçamento/Proposta pública (sem login) — já existente
+    // ------------------------------------------------------------
+    // Mantém o comportamento já usado hoje: leitura/gravação pública, restrita
+    // a um token específico (o link enviado ao cliente) — ajuste aqui se seu
+    // fluxo público já usa uma regra diferente desta.
+    match /propostasPublicas/{token} {
+      allow read, write: if true;
+    }
+
+    // Qualquer coisa fora do que foi listado acima fica bloqueada por padrão
+    // (comportamento padrão do Firestore quando nenhuma regra casa).
+  }
+}
