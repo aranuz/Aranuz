@@ -1,10 +1,16 @@
 <!DOCTYPE html>
+<!-- ================================================================================
+     ARANUZ — Painel de Administração — VERSÃO ATUAL: V3.42 (13/07/2026)
+     ================================================================================ -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Aranuz · Painel de Administração</title>
+<!-- V3.42 — 13/07/2026 (Rodada 1, pedido do cliente): BUGFIX — "Resetar Banco de Dados" podia deixar 1
+     registro pra trás. Ver comentário completo em _excluirColecaoInteira_() (força leitura direto do
+     servidor + confirmação final antes de encerrar). -->
 <!-- V3.34 — 13/07/2026 (Rodada 2, pedido do cliente): novo card "Reports de Usuários (Erro/Melhoria)" —
      lê a coleção reportsUsuarios (texto livre enviado pelo botão do cabeçalho do App principal), com
      opção de excluir cada report depois de tratado. -->
@@ -1062,17 +1068,37 @@
   // Apaga TODOS os documentos de uma coleção (em lotes de até 400, respeitando o limite de 500 operações
   // por batch do Firestore) — client SDK não tem "apagar coleção inteira" pronto, então isso repete
   // get()+batch delete até a coleção esvaziar.
+  // V3.42 — 13/07/2026 (Rodada 1, pedido do cliente): BUGFIX — "Resetar Banco de Dados" relatado como
+  // sempre deixando 1 registro pra trás. Duas causas prováveis, ambas corrigidas aqui: (1) `.get()` sem
+  // opção nenhuma pode ler do CACHE local do SDK (não confirmado no servidor), então uma consulta de
+  // confirmação logo depois de um commit podia devolver um snapshot só um instante desatualizado — agora
+  // toda leitura força `{ source: 'server' }`, ignorando cache; (2) se o app principal do usuário estava
+  // aberto no exato momento do reset, o espelhamento automático dele (a cada ~400ms) podia regravar 1
+  // registro que ainda estivesse "sujo" no navegador dele bem no meio da limpeza — agora, depois de
+  // esvaziar tudo, faz uma CONFIRMAÇÃO final (nova consulta ao servidor); se algo ainda aparecer, apaga de
+  // novo e confirma outra vez, até realmente não sobrar nada (ou até 10 tentativas, como trava de segurança
+  // — se isso disparar, é sinal de escrita concorrente constante, e não mais um resíduo de exclusão).
   async function _excluirColecaoInteira_(empresaId, nomeColecao) {
     const colRef = db.collection('empresas').doc(empresaId).collection(nomeColecao);
     let total = 0;
+    let tentativasConfirmacao = 0;
     while (true) {
-      const snap = await colRef.limit(400).get();
-      if (snap.empty) break;
+      const snap = await colRef.limit(400).get({ source: 'server' });
+      if (snap.empty) {
+        // Confirmação final: garante que o servidor (não o cache) realmente não tem mais nada antes de
+        // encerrar. Se aparecer algo (registro concorrente, leitura anterior desatualizada etc.), volta
+        // pro topo do loop e apaga de novo.
+        if (tentativasConfirmacao >= 10) break; // trava de segurança — evita loop infinito numa escrita concorrente constante
+        tentativasConfirmacao++;
+        const confirmacao = await colRef.limit(1).get({ source: 'server' });
+        if (confirmacao.empty) break;
+        continue;
+      }
       const batch = db.batch();
       snap.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
       total += snap.size;
-      if (snap.size < 400) break;
+      tentativasConfirmacao = 0; // ainda tinha dado pra apagar — zera a contagem de tentativas "vazias"
     }
     return total;
   }
